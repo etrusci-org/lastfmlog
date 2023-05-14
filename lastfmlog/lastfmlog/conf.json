@@ -1,0 +1,22 @@
+{
+    "app": {
+        "apiBaseURL": "http://ws.audioscrobbler.com/2.0/",
+        "apiItemsPerPageLimitInitial": 200,
+        "apiItemsPerPageLimitIncremental": 20,
+        "apiSubsequentPageRequestDelay": 10
+    },
+    "cliparser": [
+        {
+            "arg": "action",
+            "metavar": "<ACTION>",
+            "choices": ["update"],
+            "help": "Do something. Check README for actions."
+        },
+        {
+            "arg": "--datadir",
+            "metavar": "<DIRECTORY_PATH>",
+            "default": "",
+            "help": "Override default data directory path."
+        }
+    ]
+}
