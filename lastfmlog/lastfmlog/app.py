@@ -54,19 +54,95 @@ class App:
 
 
     def update(self) -> None:
-        print('# Action: update')
         self.lastPlayedOnTime = self._getLastPlayedOnTime()
         self._fetchRecentTracks()
         self.DB.vacuum()
-        print('# Done')
+
+
+    def stats(self) -> None:
+        con, cur = self.DB.connect()
+
+        stats = {
+            'totalScrobbles': 0,
+            'uniqueArtistsCount': 0,
+            'uniqueTracksCount': 0,
+            'uniqueAlbumsCount': 0,
+            'topArtists': [],
+            'topTracks': [],
+            'topAlbums': [],
+        }
+
+        # Total scrobbles
+        q = 'SELECT COUNT(DISTINCT scrobbleHash) FROM trackslog;'
+        cur.execute(q)
+        stats['totalScrobbles'] = cur.fetchone()[0]
+
+        # Unique artists
+        q = 'SELECT COUNT(DISTINCT artistName COLLATE NOCASE) FROM trackslog;'
+        cur.execute(q)
+        stats['uniqueArtistsCount'] = cur.fetchone()[0]
+
+        # Unique tracks
+        q = 'SELECT COUNT(DISTINCT artistName || trackName COLLATE NOCASE) FROM trackslog;'
+        cur.execute(q)
+        stats['uniqueTracksCount'] = cur.fetchone()[0]
+
+        # Unique albums
+        q = 'SELECT COUNT(DISTINCT artistName || albumName COLLATE NOCASE) FROM trackslog;'
+        cur.execute(q)
+        stats['uniqueAlbumsCount'] = cur.fetchone()[0]
+
+        # Top artists
+        q = 'SELECT artistName, COUNT(artistName) AS playCount FROM trackslog GROUP BY artistName COLLATE NOCASE ORDER BY playCount DESC LIMIT ?;'
+        v = [
+            self.args['limit'] if self.args['limit'] else 100
+        ]
+        cur.execute(q, v)
+        for v in cur.fetchall():
+            stats['topArtists'].append({
+                'count': v[1],
+                'artist': v[0],
+            })
+
+        # Top tracks
+        q = 'SELECT artistName, trackName, COUNT(trackName) AS playCount FROM trackslog GROUP BY trackName COLLATE NOCASE ORDER BY playCount DESC LIMIT ?;'
+        v = [
+            self.args['limit'] if self.args['limit'] else 100
+        ]
+        cur.execute(q, v)
+        for v in cur.fetchall():
+            stats['topTracks'].append({
+                'count': v[2],
+                'track': v[1],
+                'artist': v[0],
+            })
+
+        # Top albums
+        q = 'SELECT CASE WHEN COUNT(DISTINCT artistName) > 1 THEN \'Various Artists\' ELSE MAX(artistName) END AS artistName, albumName, COUNT(albumName) AS playCount FROM trackslog GROUP BY albumName COLLATE NOCASE ORDER BY playCount DESC LIMIT ?;'
+        v = [
+            self.args['limit'] if self.args['limit'] else 100
+        ]
+        cur.execute(q, v)
+        for v in cur.fetchall():
+            stats['topAlbums'].append({
+                'count': v[2],
+                'album': v[1],
+                'artist': v[0],
+            })
+
+        con.close()
+
+        # Also save the stats to a file
+        statsFile = os.path.join(self.dataDir, 'stats.json')
+        with open(statsFile, mode='w') as f:
+            f.write(json.dumps(stats, ensure_ascii=False, indent=4))
+            print(f'> Stats saved to file: {statsFile}')
 
 
     def _createDatabase(self) -> None:
         con, cur = self.DB.connect()
         try:
-            for schema in databaseSchema:
-                cur.executescript(schema)
-            con.commit()
+            cur.executescript(databaseSchema)
         except Exception as e:
             print(f'Error while creating database: {e}')
         finally:
@@ -134,7 +210,7 @@ class App:
                 track['date']['uts'],
                 track['artist']['#text'],
                 track['name'],
-                track['album']['#text'],
+                track['album']['#text'] if track['album']['#text'] else None,
             ]
             try:
                 cur.execute(q, v)

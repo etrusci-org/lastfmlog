@@ -9,9 +9,15 @@
         {
             "arg": "action",
             "metavar": "<ACTION>",
-            "choices": ["update"],
+            "choices": ["update", "stats"],
             "help": "Do something. Check README for actions."
         },
+        {
+            "arg": "--limit",
+            "metavar": "<INTEGER>",
+            "default": "",
+            "help": "Set query result limit for certain actions."
+    },
         {
             "arg": "--datadir",
             "metavar": "<DIRECTORY_PATH>",

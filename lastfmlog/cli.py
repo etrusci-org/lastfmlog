@@ -19,8 +19,15 @@ def main() -> None:
     args = CLIParser.parseArgs()
     App = lastfmlog.App(conf=lastfmlog.conf['app'], args=args)
 
+    print(f'# Action: {args["action"]}')
+
     if args['action'] == 'update':
         App.update()
+
+    if args['action'] == 'stats':
+        App.stats()
+
+    print('# Done')
 
 
 
