@@ -45,7 +45,7 @@ class App:
             print(f'Error while decoding secrets file. {e}')
             exit(1)
 
-        # Data dir and secrets file exist if we reach this line,
+        # Data dir and secrets file are ok if we reach this line,
         # therefore we can now create the database file if it does not exist already
         self.dbFile = os.path.join(self.dataDir, 'main.sqlite3')
         self.DB = DatabaseSQLite(dbFile=self.dbFile)
@@ -75,7 +75,8 @@ class App:
 
     def _getLastPlayedOnTime(self) -> int:
         con, cur = self.DB.connect()
-        cur.execute('SELECT playedOnTime FROM trackslog ORDER BY playedOnTime DESC LIMIT 1;')
+        q = 'SELECT playedOnTime FROM trackslog ORDER BY playedOnTime DESC LIMIT 1;'
+        cur.execute(q)
         dump = cur.fetchone()
         con.close()
         return dump[0] if dump else self.lastPlayedOnTime
@@ -129,7 +130,7 @@ class App:
 
             q = 'INSERT INTO trackslog (scrobbleHash, playedOnTime, artistName, trackName, albumName) VALUES (?, ?, ?, ?, ?);'
             v = [
-                hashlib.sha256(str(track['date']['uts'] + track['artist']['#text'] + track['name'] + track['album']['#text']).lower().encode()).hexdigest(),
+                hashlib.sha256(f'{track["date"]["uts"]}{track["artist"]["#text"]}{track["name"]}{track["album"]["#text"]}'.lower().encode()).hexdigest(),
                 track['date']['uts'],
                 track['artist']['#text'],
                 track['name'],
