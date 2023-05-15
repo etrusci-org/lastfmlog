@@ -10,13 +10,13 @@
             "arg": "action",
             "metavar": "<ACTION>",
             "choices": ["update", "stats"],
-            "help": "Do something. Check README for actions."
+            "help": "Do something."
         },
         {
             "arg": "--limit",
             "metavar": "<INTEGER>",
             "default": "",
-            "help": "Set query result limit for certain actions."
+            "help": "Set results limit."
     },
         {
             "arg": "--datadir",

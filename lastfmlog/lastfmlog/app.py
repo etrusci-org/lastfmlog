@@ -8,6 +8,7 @@ from .database import DatabaseSQLite
 
 
 
+
 class App:
     conf: dict
     args: dict
@@ -61,20 +62,29 @@ class App:
     def stats(self) -> None:
         con, cur = self.DB.connect()
 
+        q = 'SELECT COUNT(scrobbleHash) AS count FROM trackslog;'
+        cur.execute(q)
+        tableRowsCount = cur.fetchone()[0]
+
+        resultLimit = int(self.args['limit'] if self.args['limit'] else tableRowsCount)
+
+
         stats = {
-            'totalScrobbles': 0,
+            '_statsUpdatedOn': int(time.time()),
+            '_databaseUpdatedOn': int(os.path.getmtime(self.dbFile)),
+            '_resultsLimit': resultLimit,
+            '_trackslogRowsCount': tableRowsCount,
             'uniqueArtistsCount': 0,
             'uniqueTracksCount': 0,
             'uniqueAlbumsCount': 0,
+            'totalScrobblesCount': 0,
+            'yearlyScrobblesCount': [],
+            'montlyScrobblesCount': [],
+            'dailyScrobblesCount': [],
             'topArtists': [],
             'topTracks': [],
             'topAlbums': [],
         }
-
-        # Total scrobbles
-        q = 'SELECT COUNT(DISTINCT scrobbleHash) FROM trackslog;'
-        cur.execute(q)
-        stats['totalScrobbles'] = cur.fetchone()[0]
 
         # Unique artists
         q = 'SELECT COUNT(DISTINCT artistName COLLATE NOCASE) FROM trackslog;'
@@ -91,51 +101,125 @@ class App:
         cur.execute(q)
         stats['uniqueAlbumsCount'] = cur.fetchone()[0]
 
+        # Total scrobbles
+        q = 'SELECT COUNT(DISTINCT scrobbleHash) FROM trackslog;'
+        cur.execute(q)
+        stats['totalScrobblesCount'] = cur.fetchone()[0]
+
+        # Yearly scrobbles
+        q = 'SELECT strftime(\'%Y\', playedOnTime, \'unixepoch\') AS year, COUNT(*) AS count FROM trackslog GROUP BY year ORDER BY year DESC LIMIT ?;'
+        v = [
+            resultLimit
+        ]
+        cur.execute(q, v)
+        for v in cur.fetchall():
+            stats['yearlyScrobblesCount'].append({
+                'year': v[0],
+                'count': v[1],
+            })
+
+        # Monthly scrobbles
+        q = 'SELECT strftime(\'%Y-%m\', playedOnTime, \'unixepoch\') AS month, COUNT(*) AS count FROM trackslog GROUP BY month ORDER BY month DESC LIMIT ?;'
+        v = [
+            resultLimit
+        ]
+        cur.execute(q, v)
+        for v in cur.fetchall():
+            stats['montlyScrobblesCount'].append({
+                'month': v[0],
+                'count': v[1],
+            })
+
+        # Daily scrobbles
+        q = 'SELECT strftime(\'%Y-%m-%d\', playedOnTime, \'unixepoch\') AS day, COUNT(*) AS count FROM trackslog GROUP BY day ORDER BY day DESC LIMIT ?;'
+        v = [
+            resultLimit
+        ]
+        cur.execute(q, v)
+        for v in cur.fetchall():
+            stats['dailyScrobblesCount'].append({
+                'day': v[0],
+                'count': v[1],
+            })
+
         # Top artists
         q = 'SELECT artistName, COUNT(artistName) AS playCount FROM trackslog GROUP BY artistName COLLATE NOCASE ORDER BY playCount DESC LIMIT ?;'
         v = [
-            self.args['limit'] if self.args['limit'] else 100
+            resultLimit
         ]
         cur.execute(q, v)
         for v in cur.fetchall():
             stats['topArtists'].append({
-                'count': v[1],
                 'artist': v[0],
+                'count': v[1],
             })
 
         # Top tracks
         q = 'SELECT artistName, trackName, COUNT(trackName) AS playCount FROM trackslog GROUP BY trackName COLLATE NOCASE ORDER BY playCount DESC LIMIT ?;'
         v = [
-            self.args['limit'] if self.args['limit'] else 100
+            resultLimit
         ]
         cur.execute(q, v)
         for v in cur.fetchall():
             stats['topTracks'].append({
-                'count': v[2],
-                'track': v[1],
                 'artist': v[0],
+                'track': v[1],
+                'count': v[2],
             })
 
         # Top albums
-        q = 'SELECT CASE WHEN COUNT(DISTINCT artistName) > 1 THEN \'Various Artists\' ELSE MAX(artistName) END AS artistName, albumName, COUNT(albumName) AS playCount FROM trackslog GROUP BY albumName COLLATE NOCASE ORDER BY playCount DESC LIMIT ?;'
+        q = 'SELECT CASE WHEN COUNT(DISTINCT artistName) > 1 THEN \'Various Artists\' ELSE MAX(artistName) END AS artistName, albumName, COUNT(albumName) AS playCount FROM trackslog WHERE albumName IS NOT NULL GROUP BY albumName COLLATE NOCASE ORDER BY playCount DESC LIMIT ?;'
         v = [
-            self.args['limit'] if self.args['limit'] else 100
+            resultLimit
         ]
         cur.execute(q, v)
         for v in cur.fetchall():
             stats['topAlbums'].append({
-                'count': v[2],
-                'album': v[1],
                 'artist': v[0],
+                'album': v[1],
+                'count': v[2],
             })
 
         con.close()
 
-        # Also save the stats to a file
+        # Save the stats to a file
         statsFile = os.path.join(self.dataDir, 'stats.json')
         with open(statsFile, mode='w') as f:
             f.write(json.dumps(stats, ensure_ascii=False, indent=4))
             print(f'> Stats saved to file: {statsFile}')
+            print()
+
+        # Print stats to stdout
+        print('O V E R V I E W')
+        print(f'total scrobbles : {stats["totalScrobblesCount"]}')
+        print(f'unique artists : {stats["uniqueArtistsCount"]}')
+        print(f'unique tracks : {stats["uniqueTracksCount"]}')
+        print(f'unique albums : {stats["uniqueAlbumsCount"]}')
+        print()
+        print('Y E A R L Y  S C R O B B L E S')
+        for v in stats['yearlyScrobblesCount']:
+            print(f'{v["year"]} : {v["count"]}')
+        print()
+        print('M O N T H L Y  S C R O B B L E S')
+        for v in stats['montlyScrobblesCount']:
+            print(f'{v["month"]} : {v["count"]}')
+        print()
+        print('D A I L Y  S C R O B B L E S')
+        for v in stats['dailyScrobblesCount']:
+            print(f'{v["day"]} : {v["count"]}')
+        print()
+        print('T O P  A R T I S T S  B Y  P L A Y  C O U N T')
+        for v in stats['topArtists']:
+            print(f'{v["artist"]} : {v["count"]}')
+        print()
+        print('T O P  T R A C K S  B Y  P L A Y  C O U N T')
+        for v in stats['topTracks']:
+            print(f'{v["track"]} : by {v["artist"]} : {v["count"]}')
+        print()
+        print('T O P  A L B U M S  B Y  P L A Y  C O U N T')
+        for v in stats['topAlbums']:
+            print(f'{v["album"]} : by {v["artist"]} : {v["count"]}')
+        print()
 
 
     def _createDatabase(self) -> None:

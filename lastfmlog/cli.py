@@ -13,21 +13,24 @@ def main() -> None:
     CLIParser = lastfmlog.CLIParser(conf=lastfmlog.conf['cliparser'])
 
     if len(sys.argv) < 2:
+        print('See README for more detailed help.')
+        print()
         CLIParser.printHelp()
-        return
+    else:
+        args = CLIParser.parseArgs()
+        App = lastfmlog.App(conf=lastfmlog.conf['app'], args=args)
 
-    args = CLIParser.parseArgs()
-    App = lastfmlog.App(conf=lastfmlog.conf['app'], args=args)
+        print(f'\{args["action"]}/')
+        print()
 
-    print(f'# Action: {args["action"]}\n')
+        if args['action'] == 'update':
+            App.update()
 
-    if args['action'] == 'update':
-        App.update()
+        if args['action'] == 'stats':
+            App.stats()
 
-    if args['action'] == 'stats':
-        App.stats()
+    print()
 
-    print('\n# Done')
 
 
 
