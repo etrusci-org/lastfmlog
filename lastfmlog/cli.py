@@ -9,28 +9,21 @@ import lastfmlog
 
 def main() -> None:
     print(lastfmlog.banner)
+    print()
 
     CLIParser = lastfmlog.CLIParser(conf=lastfmlog.conf['cliparser'])
 
     if len(sys.argv) < 2:
-        print('See README for more detailed help.')
-        print()
         CLIParser.printHelp()
     else:
         args = CLIParser.parseArgs()
-        App = lastfmlog.App(conf=lastfmlog.conf['app'], args=args)
-
-        print(f'\{args["action"]}/')
-        print()
+        App = lastfmlog.Core(conf=lastfmlog.conf['app'], args=args)
 
         if args['action'] == 'update':
             App.update()
 
         if args['action'] == 'stats':
             App.stats()
-
-    print()
-
 
 
 
@@ -40,3 +33,5 @@ if __name__ == '__main__':
         main()
     except KeyboardInterrupt:
         print('\n! Action aborted by user.')
+    finally:
+        print()

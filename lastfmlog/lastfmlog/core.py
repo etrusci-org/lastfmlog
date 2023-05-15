@@ -9,7 +9,7 @@ from .database import DatabaseSQLite
 
 
 
-class App:
+class Core:
     conf: dict
     args: dict
     dataDir: str

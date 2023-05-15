@@ -10,19 +10,19 @@
             "arg": "action",
             "metavar": "<ACTION>",
             "choices": ["update", "stats"],
-            "help": "Do something."
+            "help": "do something"
         },
         {
             "arg": "--limit",
             "metavar": "<INTEGER>",
             "default": "",
-            "help": "Set results limit."
+            "help": "set results limit"
     },
         {
             "arg": "--datadir",
-            "metavar": "<DIRECTORY_PATH>",
+            "metavar": "<DIRECTORY>",
             "default": "",
-            "help": "Override default data directory path."
+            "help": "override default data directory path"
         }
     ]
 }

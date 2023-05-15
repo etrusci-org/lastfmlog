@@ -1,7 +1,7 @@
 import os
 import json
 
-from .app import App
+from .core import Core
 from .cliparser import CLIParser
 
 
@@ -19,7 +19,7 @@ with open(bannerFile) as f:
 
 
 __all__ = [
-    'App',
+    'Core',
     'CLIParser',
     'conf',
     'banner',
