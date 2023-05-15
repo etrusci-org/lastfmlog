@@ -151,7 +151,7 @@ class App:
 
     def _getLastPlayedOnTime(self) -> int:
         con, cur = self.DB.connect()
-        q = 'SELECT playedOnTime FROM trackslog ORDER BY playedOnTime DESC LIMIT 1;'
+        q = 'SELECT playedOnTime FROM trackslog LIMIT 1;'
         cur.execute(q)
         dump = cur.fetchone()
         con.close()
