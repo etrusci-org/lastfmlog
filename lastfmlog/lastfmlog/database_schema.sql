@@ -1,4 +1,3 @@
-databaseSchema = '''
 BEGIN;
 
 CREATE TABLE IF NOT EXISTS trackslog (
@@ -16,4 +15,3 @@ CREATE INDEX idx_trackName ON trackslog(trackName COLLATE NOCASE ASC);
 CREATE INDEX idx_albumName ON trackslog(albumName COLLATE NOCASE ASC);
 
 COMMIT;
-'''

@@ -5,7 +5,6 @@ import hashlib
 import time
 
 from .database import DatabaseSQLite
-from .database_schema import databaseSchema
 
 
 
@@ -142,7 +141,10 @@ class App:
     def _createDatabase(self) -> None:
         con, cur = self.DB.connect()
         try:
-            cur.executescript(databaseSchema)
+            schemaFile = os.path.join(os.path.dirname(__file__), 'database_schema.sql')
+            with open(schemaFile) as f:
+                schema = f.read()
+                cur.executescript(schema)
         except Exception as e:
             print(f'Error while creating database: {e}')
         finally:
