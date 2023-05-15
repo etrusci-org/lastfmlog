@@ -79,7 +79,7 @@ class Core:
             'uniqueAlbumsCount': 0,
             'totalScrobblesCount': 0,
             'yearlyScrobblesCount': [],
-            'montlyScrobblesCount': [],
+            'monthlyScrobblesCount': [],
             'dailyScrobblesCount': [],
             'topArtists': [],
             'topTracks': [],
@@ -125,7 +125,7 @@ class Core:
         ]
         cur.execute(q, v)
         for v in cur.fetchall():
-            stats['montlyScrobblesCount'].append({
+            stats['monthlyScrobblesCount'].append({
                 'month': v[0],
                 'count': v[1],
             })
@@ -201,7 +201,7 @@ class Core:
             print(f'{v["year"]} : {v["count"]}')
         print()
         print('M O N T H L Y  S C R O B B L E S')
-        for v in stats['montlyScrobblesCount']:
+        for v in stats['monthlyScrobblesCount']:
             print(f'{v["month"]} : {v["count"]}')
         print()
         print('D A I L Y  S C R O B B L E S')
