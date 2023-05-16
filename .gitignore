@@ -1,3 +1,6 @@
 0000/
 
 __pycache__/
+
+app/data/*
+!app/data/*.example.*
