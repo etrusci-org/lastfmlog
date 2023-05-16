@@ -1,7 +1,3 @@
 0000/
 
 __pycache__/
-
-
-lastfmlog/data/*
-!lastfmlog/data/*.example.*
