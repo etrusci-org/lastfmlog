@@ -40,32 +40,95 @@ conf['api'] = {
     'subsequentPageRequestDelay': 10,
 }
 
+conf['argDefaults'] = {
+    'datadir': conf['defaultDataDir'],
+    'obsoleteafter': 1800,
+}
+
 conf['cliparser'] = {
     'info': {
         'prog': 'cli.py',
         'description': 'Check README for more detailed help.',
-        'epilog': f'Default data directory: {conf["defaultDataDir"]}',
+        'epilog': f'Made with <3 by arT2 <etrusci.org>',
     },
     'args': [
         {
             'arg': 'action',
             'metavar': 'ACTION',
             'type': str,
-            'choices': ['update'],
+            'choices': ['update', 'stats'],
             'help': 'Do something.',
-        },
-        {
-            'arg': '--updatefromstart',
-            'action': 'store_true',
-            'help': 'If action is update, fetch tracks from the beginning of time.',
         },
         {
             'arg': ['-d', '--datadir'],
             'metavar': 'PATH',
             'type': str,
             'required': False,
-            'default': conf['defaultDataDir'],
+            'default': conf['argDefaults']['datadir'],
             'help': 'Override default data directory path.',
+        },
+        # for update
+        {
+            'arg': '--updatefromstart',
+            'action': 'store_true',
+            'help': '[update] Fetch tracks from the beginning of time.',
+        },
+        # for stats
+        {
+            'arg': ['-o', '--obsoleteafter'],
+            'metavar': 'SECONDS',
+            'type': int,
+            'required': False,
+            'default': conf['argDefaults']['obsoleteafter'],
+            'help': '[stats] Time in seconds until the database is considered obsolete.',
+        },
+        {
+            'arg': '--playsbyyearlimit',
+            'metavar': 'NUMBER',
+            'type': int,
+            'required': False,
+            'default': None,
+            'help': '[stats] Limit the number of items in plays by year.',
+        },
+        {
+            'arg': '--playsbymonthlimit',
+            'metavar': 'NUMBER',
+            'type': int,
+            'required': False,
+            'default': None,
+            'help': '[stats] Limit the number of items in plays by month.',
+        },
+        {
+            'arg': '--playsbydaylimit',
+            'metavar': 'NUMBER',
+            'type': int,
+            'required': False,
+            'default': None,
+            'help': '[stats] Limit the number of items in plays by day.',
+        },
+        {
+            'arg': '--topartistslimit',
+            'metavar': 'NUMBER',
+            'type': int,
+            'required': False,
+            'default': None,
+            'help': '[stats] Limit the number of items in top artists.',
+        },
+        {
+            'arg': '--toptrackslimit',
+            'metavar': 'NUMBER',
+            'type': int,
+            'required': False,
+            'default': None,
+            'help': '[stats] Limit the number of items in top tracks.',
+        },
+        {
+            'arg': '--topalbumslimit',
+            'metavar': 'NUMBER',
+            'type': int,
+            'required': False,
+            'default': None,
+            'help': '[stats] Limit the number of items in top albums.',
         },
     ],
 }

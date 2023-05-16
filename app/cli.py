@@ -23,6 +23,9 @@ def main() -> None:
     if cliargs['action'] == 'update':
         App.update()
 
+    if cliargs['action'] == 'stats':
+        App.stats()
+
 
 
 

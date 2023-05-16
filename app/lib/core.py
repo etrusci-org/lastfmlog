@@ -5,6 +5,7 @@ import hashlib
 import time
 
 from .db import DatabaseSQLite
+from .query import query
 
 
 
@@ -64,6 +65,117 @@ class Core:
         self._fetchRecentTracks()
 
         self.DB.vacuum()
+
+
+    def stats(self) -> None:
+        # Check for outdated database
+        if time.time() - os.path.getmtime(self.dbFile) > self.args['obsoleteafter']:
+            x = input('Last database update was a while ago, update now? [Y/n]: ').strip().lower()
+            if x == '' or x == 'y':
+                self.update()
+
+        con, cur = self.DB.connect()
+
+        stats = {
+            '_statsUpdatedOn': time.time(),
+            '_databaseUpdatedOn': os.path.getmtime(self.dbFile),
+            '_defaultQueryLimit': None,
+            'playsTotal': None,
+            'uniqueArtists': None,
+            'uniqueTracks': None,
+            'uniqueAlbums': None,
+            'playsByYear': [],
+            'playsByMonth': [],
+            'playsByDay': [],
+            'topArtists': [],
+            'topTracks': [],
+            'topAlbums': [],
+        }
+
+        # plays total
+        cur.execute(query['playsTotal'])
+        stats['playsTotal'] = cur.fetchone()[0]
+
+        # Now that we got the total row count of trackslog, we can set a sane default query limit
+        # for easier access later in the code
+        defaultQueryLimit = stats['playsTotal']
+        stats['_defaultQueryLimit'] = defaultQueryLimit
+
+        # plays by year
+        cur.execute(query['playsByYear'], {'limit': self.args['playsbyyearlimit'] if self.args['playsbyyearlimit'] else defaultQueryLimit})
+        for v in cur.fetchall():
+            stats['playsByYear'].append({
+                'year': v[0],
+                'plays': v[1],
+            })
+
+        # plays by month
+        cur.execute(query['playsByMonth'], {'limit': self.args['playsbymonthlimit'] if self.args['playsbymonthlimit'] else defaultQueryLimit})
+        for v in cur.fetchall():
+            stats['playsByMonth'].append({
+                'month': v[0],
+                'plays': v[1],
+            })
+
+        # plays by day
+        cur.execute(query['playsByDay'], {'limit': self.args['playsbydaylimit'] if self.args['playsbydaylimit'] else defaultQueryLimit})
+        for v in cur.fetchall():
+            stats['playsByDay'].append({
+                'day': v[0],
+                'plays': v[1],
+            })
+
+        # unique artists
+        cur.execute(query['uniqueArtists'])
+        stats['uniqueArtists'] = cur.fetchone()[0]
+
+        # unique tracks
+        cur.execute(query['uniqueTracks'])
+        stats['uniqueTracks'] = cur.fetchone()[0]
+
+        # unique albums
+        cur.execute(query['uniqueAlbums'])
+        stats['uniqueAlbums'] = cur.fetchone()[0]
+
+        # top artists
+        cur.execute(query['topArtists'], {'limit': self.args['topartistslimit'] if self.args['topartistslimit'] else defaultQueryLimit})
+        for v in cur.fetchall():
+            stats['topArtists'].append({
+                'artist': v[0],
+                'plays': v[1],
+            })
+
+        # top tracks
+        cur.execute(query['topTracks'], {'limit': self.args['toptrackslimit'] if self.args['toptrackslimit'] else defaultQueryLimit})
+        for v in cur.fetchall():
+            stats['topTracks'].append({
+                'track': v[1],
+                'artist': v[0],
+                'plays': v[2],
+            })
+
+        # top albums
+        cur.execute(query['topAlbums'], {'limit': self.args['topalbumslimit'] if self.args['topalbumslimit'] else defaultQueryLimit})
+        for v in cur.fetchall():
+            stats['topAlbums'].append({
+                'album': v[1],
+                'artist': v[0],
+                'plays': v[2],
+            })
+
+
+        # Done querying the database
+        con.close()
+
+        # Save the stats to a file
+        # TODO: statsFileName to conf
+        statsFile = os.path.join(self.dataDir, 'stats.json')
+        with open(statsFile, mode='w') as f:
+            f.write(json.dumps(stats, ensure_ascii=False, indent=4))
+            print(f'Stats saved to file: {statsFile}')
+
+
+
 
 
     def _getLastPlayedOnTime(self) -> int:
