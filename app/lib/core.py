@@ -116,7 +116,7 @@ class Core:
 
         # top artists
         cur.execute(query['topArtists'], {'limit': self.args['topartistslimit'] if self.args['topartistslimit'] else defaultQueryLimit})
-        for v in cur.fetchall():
+        for v in cur:
             stats['topArtists'].append({
                 'artist': v[0],
                 'plays': v[1],
@@ -124,7 +124,7 @@ class Core:
 
         # top tracks
         cur.execute(query['topTracks'], {'limit': self.args['toptrackslimit'] if self.args['toptrackslimit'] else defaultQueryLimit})
-        for v in cur.fetchall():
+        for v in cur:
             stats['topTracks'].append({
                 'track': v[1],
                 'artist': v[0],
@@ -133,7 +133,7 @@ class Core:
 
         # top albums
         cur.execute(query['topAlbums'], {'limit': self.args['topalbumslimit'] if self.args['topalbumslimit'] else defaultQueryLimit})
-        for v in cur.fetchall():
+        for v in cur:
             stats['topAlbums'].append({
                 'album': v[1],
                 'artist': v[0],
@@ -142,7 +142,7 @@ class Core:
 
         # plays by year
         cur.execute(query['playsByYear'], {'limit': self.args['playsbyyearlimit'] if self.args['playsbyyearlimit'] else defaultQueryLimit})
-        for v in cur.fetchall():
+        for v in cur:
             stats['playsByYear'].append({
                 'year': v[0],
                 'plays': v[1],
@@ -150,7 +150,7 @@ class Core:
 
         # plays by month
         cur.execute(query['playsByMonth'], {'limit': self.args['playsbymonthlimit'] if self.args['playsbymonthlimit'] else defaultQueryLimit})
-        for v in cur.fetchall():
+        for v in cur:
             stats['playsByMonth'].append({
                 'month': v[0],
                 'plays': v[1],
@@ -158,7 +158,7 @@ class Core:
 
         # plays by day
         cur.execute(query['playsByDay'], {'limit': self.args['playsbydaylimit'] if self.args['playsbydaylimit'] else defaultQueryLimit})
-        for v in cur.fetchall():
+        for v in cur:
             stats['playsByDay'].append({
                 'day': v[0],
                 'plays': v[1],
@@ -166,7 +166,7 @@ class Core:
 
         # plays by Hour
         cur.execute(query['playsByHour'], {'limit': self.args['playsbyhourlimit'] if self.args['playsbyhourlimit'] else defaultQueryLimit})
-        for v in cur.fetchall():
+        for v in cur:
             stats['playsByHour'].append({
                 'hour': v[0].split(' ')[1],
                 'day': v[0].split(' ')[0],
@@ -248,34 +248,33 @@ class Core:
         if totalPages <= 0:
             totalPages = 1
 
-        con, cur = self.DB.connect()
-
         # Store tracks in database
-        for track in apiData['recenttracks']['track']:
-            # silently skip currently playing track
-            if not track.get('date'):
-                continue
-
-            q = 'INSERT INTO trackslog (scrobbleHash, playedOnTime, artistName, trackName, albumName) VALUES (:scrobbleHash, :playedOnTime, :artistName, :trackName, :albumName);'
-            v = {
-                'scrobbleHash': hashlib.sha256(f'{track["date"]["uts"]}{track["artist"]["#text"]}{track["name"]}{track["album"]["#text"]}'.lower().encode()).hexdigest(),
-                'playedOnTime': track['date']['uts'],
-                'artistName': track['artist']['#text'],
-                'trackName': track['name'],
-                'albumName': track['album']['#text'] if track['album']['#text'] else None,
-            }
-            try:
+        try:
+            con, cur = self.DB.connect()
+            for track in apiData['recenttracks']['track']:
+                # silently skip currently playing track
+                if not track.get('date'):
+                    continue
+                q = 'INSERT INTO trackslog (scrobbleHash, playedOnTime, artistName, trackName, albumName) VALUES (:scrobbleHash, :playedOnTime, :artistName, :trackName, :albumName);'
+                v = {
+                    'scrobbleHash': hashlib.sha256(f'{track["date"]["uts"]}{track["artist"]["#text"]}{track["name"]}{track["album"]["#text"]}'.lower().encode()).hexdigest(),
+                    'playedOnTime': track['date']['uts'],
+                    'artistName': track['artist']['#text'],
+                    'trackName': track['name'],
+                    'albumName': track['album']['#text'] if track['album']['#text'] else None,
+                }
                 cur.execute(q, v)
                 print(f'+ {track["artist"]["#text"]} - {track["name"]}')
                 _newTracksCount += 1
-            except Exception as e:
-                if str(e).find('UNIQUE') != -1:
-                    print(f'~ {track["artist"]["#text"]} - {track["name"]}')
-                else:
-                    print(f'! {e} | {track["artist"]["#text"]} - {track["name"]}')
-
-        con.commit()
-        con.close()
+        except Exception as e:
+            if str(e).find('UNIQUE') != -1:
+                print(f'~ {track["artist"]["#text"]} - {track["name"]}')
+            else:
+                print(f'! {e} | {track["artist"]["#text"]} - {track["name"]}')
+            _skippedTracksCount += 1
+        finally:
+            con.commit()
+            con.close()
 
         # Fetch the next data page if there is one
         if page < totalPages:
