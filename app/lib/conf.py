@@ -56,7 +56,7 @@ conf['cliparser'] = {
             'arg': 'action',
             'metavar': 'ACTION',
             'type': str,
-            'choices': ['update', 'stats'],
+            'choices': ['update', 'stats', 'reset'],
             'help': 'Do something.',
         },
         {
@@ -67,13 +67,13 @@ conf['cliparser'] = {
             'default': conf['argDefaults']['datadir'],
             'help': 'Override default data directory path.',
         },
-        # for update
+        # options when action=update
         {
             'arg': '--updatefromstart',
             'action': 'store_true',
             'help': '[update] Fetch tracks from the beginning of time.',
         },
-        # for stats
+        # options when action=stats
         {
             'arg': ['-o', '--obsoleteafter'],
             'metavar': 'SECONDS',

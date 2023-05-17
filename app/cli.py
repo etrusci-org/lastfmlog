@@ -26,6 +26,9 @@ def main() -> None:
     if cliargs['action'] == 'stats':
         App.stats()
 
+    if cliargs['action'] == 'reset':
+        App.reset()
+
 
 
 

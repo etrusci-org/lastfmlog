@@ -1,11 +1,18 @@
 query = {}
 
-query['playsTotal'] = '''
+query['trackslogRowCount'] = '''
 SELECT
     COUNT(scrobbleHash) AS playcount
 FROM
     trackslog;
 '''
+
+# query['playsTotal'] = '''
+# SELECT
+#     COUNT(scrobbleHash) AS playcount
+# FROM
+#     trackslog;
+# '''
 
 query['playsByYear'] = '''
 SELECT

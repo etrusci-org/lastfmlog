@@ -68,62 +68,38 @@ class Core:
 
 
     def stats(self) -> None:
-        # Check for outdated database
-        if time.time() - os.path.getmtime(self.dbFile) > self.args['obsoleteafter']:
-            x = input('Last database update was a while ago, update now? [Y/n]: ').strip().lower()
+        con, cur = self.DB.connect()
+
+        # 'member stuff for later use
+        cur.execute(query['trackslogRowCount'])
+        trackslogRowCount = cur.fetchone()[0]
+        dbMtime = os.path.getmtime(self.dbFile)
+        dbAge = time.time() - dbMtime
+        defaultQueryLimit = trackslogRowCount
+
+        print(f'Local database has {trackslogRowCount} {"tracks" if trackslogRowCount == 0 or trackslogRowCount > 1 else "tracks"} stored and was changed {round(dbAge / 60)}m ago')
+
+        # Check for empty or outdated database
+        if trackslogRowCount <= 0 or dbAge > self.args['obsoleteafter']:
+            x = input('Update database first? [Y/n]: ').strip().lower()
             if x == '' or x == 'y':
                 self.update()
 
-        con, cur = self.DB.connect()
-
         stats = {
             '_statsUpdatedOn': time.time(),
-            '_databaseUpdatedOn': os.path.getmtime(self.dbFile),
-            '_defaultQueryLimit': None,
-            'playsTotal': None,
+            '_databaseUpdatedOn': dbMtime,
+            '_defaultQueryLimit': defaultQueryLimit,
+            'playsTotal': trackslogRowCount,
             'uniqueArtists': None,
             'uniqueTracks': None,
             'uniqueAlbums': None,
-            'playsByYear': [],
-            'playsByMonth': [],
-            'playsByDay': [],
             'topArtists': [],
             'topTracks': [],
             'topAlbums': [],
+            'playsByYear': [],
+            'playsByMonth': [],
+            'playsByDay': [],
         }
-
-        # plays total
-        cur.execute(query['playsTotal'])
-        stats['playsTotal'] = cur.fetchone()[0]
-
-        # Now that we got the total row count of trackslog, we can set a sane default query limit
-        # for easier access later in the code
-        defaultQueryLimit = stats['playsTotal']
-        stats['_defaultQueryLimit'] = defaultQueryLimit
-
-        # plays by year
-        cur.execute(query['playsByYear'], {'limit': self.args['playsbyyearlimit'] if self.args['playsbyyearlimit'] else defaultQueryLimit})
-        for v in cur.fetchall():
-            stats['playsByYear'].append({
-                'year': v[0],
-                'plays': v[1],
-            })
-
-        # plays by month
-        cur.execute(query['playsByMonth'], {'limit': self.args['playsbymonthlimit'] if self.args['playsbymonthlimit'] else defaultQueryLimit})
-        for v in cur.fetchall():
-            stats['playsByMonth'].append({
-                'month': v[0],
-                'plays': v[1],
-            })
-
-        # plays by day
-        cur.execute(query['playsByDay'], {'limit': self.args['playsbydaylimit'] if self.args['playsbydaylimit'] else defaultQueryLimit})
-        for v in cur.fetchall():
-            stats['playsByDay'].append({
-                'day': v[0],
-                'plays': v[1],
-            })
 
         # unique artists
         cur.execute(query['uniqueArtists'])
@@ -163,6 +139,29 @@ class Core:
                 'plays': v[2],
             })
 
+        # plays by year
+        cur.execute(query['playsByYear'], {'limit': self.args['playsbyyearlimit'] if self.args['playsbyyearlimit'] else defaultQueryLimit})
+        for v in cur.fetchall():
+            stats['playsByYear'].append({
+                'year': v[0],
+                'plays': v[1],
+            })
+
+        # plays by month
+        cur.execute(query['playsByMonth'], {'limit': self.args['playsbymonthlimit'] if self.args['playsbymonthlimit'] else defaultQueryLimit})
+        for v in cur.fetchall():
+            stats['playsByMonth'].append({
+                'month': v[0],
+                'plays': v[1],
+            })
+
+        # plays by day
+        cur.execute(query['playsByDay'], {'limit': self.args['playsbydaylimit'] if self.args['playsbydaylimit'] else defaultQueryLimit})
+        for v in cur.fetchall():
+            stats['playsByDay'].append({
+                'day': v[0],
+                'plays': v[1],
+            })
 
         # Done querying the database
         con.close()
@@ -175,7 +174,17 @@ class Core:
             print(f'Stats saved to file: {statsFile}')
 
 
+    def reset(self) -> None:
+        x = input('Reset database? [Y/n]: ').strip().lower()
+        if x != 'y':
+            return
 
+        con, cur = self.DB.connect()
+        q = 'DELETE FROM trackslog;'
+        cur.execute(q)
+        print(f'Deleted {cur.rowcount} {"tracks" if cur.rowcount == 0 or cur.rowcount > 1 else "tracks"}')
+        con.commit()
+        con.close()
 
 
     def _getLastPlayedOnTime(self) -> int:
@@ -183,6 +192,7 @@ class Core:
         q = 'SELECT playedOnTime FROM trackslog LIMIT 1;'
         cur.execute(q)
         dump = cur.fetchone()
+
         con.close()
         return dump[0] if dump else self.RAM['lastPlayedOnTime']
 
@@ -236,14 +246,14 @@ class Core:
             if not track.get('date'):
                 continue
 
-            q = 'INSERT INTO trackslog (scrobbleHash, playedOnTime, artistName, trackName, albumName) VALUES (?, ?, ?, ?, ?);'
-            v = [
-                hashlib.sha256(f'{track["date"]["uts"]}{track["artist"]["#text"]}{track["name"]}{track["album"]["#text"]}'.lower().encode()).hexdigest(),
-                track['date']['uts'],
-                track['artist']['#text'],
-                track['name'],
-                track['album']['#text'] if track['album']['#text'] else None,
-            ]
+            q = 'INSERT INTO trackslog (scrobbleHash, playedOnTime, artistName, trackName, albumName) VALUES (:scrobbleHash, :playedOnTime, :artistName, :trackName, :albumName);'
+            v = {
+                'scrobbleHash': hashlib.sha256(f'{track["date"]["uts"]}{track["artist"]["#text"]}{track["name"]}{track["album"]["#text"]}'.lower().encode()).hexdigest(),
+                'playedOnTime': track['date']['uts'],
+                'artistName': track['artist']['#text'],
+                'trackName': track['name'],
+                'albumName': track['album']['#text'] if track['album']['#text'] else None,
+            }
             try:
                 cur.execute(q, v)
                 print(f'+ {track["artist"]["#text"]} - {track["name"]}')
@@ -265,6 +275,14 @@ class Core:
         else:
             print(f'Fetched {_newTracksCount} new {"tracks" if _newTracksCount == 0 or _newTracksCount > 1 else "track"}')
             print(f'Skipped {_skippedTracksCount} {"tracks" if _skippedTracksCount == 0 or _skippedTracksCount > 1 else "track"}')
+
+            # TODO:
+            # 1 track fetched scrobbleHashes above after _newTracksCount += 1
+            # 2 compare fetched hashes with those from db
+            #   - delete each hash from db which is not in fetched list
+            #
+            # This way we can delete scrobbles on the last.fm page and then run an update with --updatefromstart
+            # and it will delete those we removed remotely.
 
 
     def _createDatabase(self) -> None:
