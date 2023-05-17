@@ -31,7 +31,7 @@ Either way works, it's up to you. Just for documentation simplification, this wi
 
 ## What to do with it
 
-```bash
+```text
 cli.py <action> [options]
 ```
 

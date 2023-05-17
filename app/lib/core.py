@@ -196,6 +196,9 @@ class Core:
         con.commit()
         con.close()
 
+        self.DB.vacuum()
+
+
 
     def _getLastPlayedOnTime(self) -> int:
         con, cur = self.DB.connect()
