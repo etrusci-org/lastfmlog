@@ -42,7 +42,7 @@ cli.py <action> [options]
 ### Actions
 
 `update`  
-Update local database with data from remote API. On the first run, all plays will be fetched. Afterwards only plays that are younger than the last one stored in local database.
+Update local database with data from remote API. On the first run, all plays will be fetched. Afterwards only plays that are younger than the last one stored in local database.  
 Example output:
 ```text
 Fetching data page 1
@@ -69,7 +69,7 @@ Stats saved to file: /home/user/lastfmlog/app/data/stats.json
 ```
 
 `reset`  
-Delete everything in local database.
+Delete everything in local database.  
 Example output:
 ```text
 Reset database? [Y/n]: y
@@ -85,7 +85,7 @@ Default: `app/data/`
 #### Options for `update`
 
 `--updatefromstart`  
-Fetch tracks from the beginning of time. In case you deleted some rows in your local database but don't want to use the `reset` action for some reason.
+Fetch tracks from the beginning of time. In case you deleted some rows in your local database but don't want to use the `reset` action for some reason.  
 Default: *incremental update*
 
 #### Options for `stats`
