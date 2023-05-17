@@ -177,8 +177,7 @@ class Core:
         con.close()
 
         # Save the stats to a file
-        # TODO: statsFileName to conf
-        statsFile = os.path.join(self.dataDir, 'stats.json')
+        statsFile = os.path.join(self.dataDir, self.conf['statsFileName'])
         with open(statsFile, mode='w') as f:
             f.write(json.dumps(stats, ensure_ascii=False, indent=4))
             print(f'Stats saved to file: {statsFile}')
@@ -197,7 +196,6 @@ class Core:
         con.close()
 
         self.DB.vacuum()
-
 
 
     def _getLastPlayedOnTime(self) -> int:

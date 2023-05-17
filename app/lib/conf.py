@@ -11,11 +11,12 @@ conf['defaultDataDir'] = os.path.abspath(os.path.join(conf['libDir'], '..', 'dat
 
 conf['secretsFileName'] = 'secrets.json'
 
+conf['statsFileName'] = 'stats.json'
+
 conf['dbFileName'] = 'main.sqlite3'
 
 conf['dbSchema'] = '''
     BEGIN;
-
     CREATE TABLE IF NOT EXISTS trackslog (
         scrobbleHash TEXT NOT NULL UNIQUE,
         playedOnTime INTEGER NOT NULL UNIQUE,
@@ -24,12 +25,10 @@ conf['dbSchema'] = '''
         albumName    TEXT DEFAULT NULL,
         PRIMARY KEY(scrobbleHash)
     );
-
     CREATE INDEX idx_playedOnTime ON trackslog(playedOnTime DESC);
     CREATE INDEX idx_artistName ON trackslog(artistName COLLATE NOCASE ASC);
     CREATE INDEX idx_trackName ON trackslog(trackName COLLATE NOCASE ASC);
     CREATE INDEX idx_albumName ON trackslog(albumName COLLATE NOCASE ASC);
-
     COMMIT;
 '''
 
