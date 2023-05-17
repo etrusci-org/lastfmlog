@@ -7,13 +7,6 @@ FROM
     trackslog;
 '''
 
-# query['playsTotal'] = '''
-# SELECT
-#     COUNT(scrobbleHash) AS playcount
-# FROM
-#     trackslog;
-# '''
-
 query['playsByYear'] = '''
 SELECT
     strftime('%Y', playedOnTime, 'unixepoch') AS year,
@@ -51,6 +44,20 @@ GROUP BY
     day
 ORDER BY
     day DESC
+LIMIT
+    :limit;
+'''
+
+query['playsByHour'] = '''
+SELECT
+    strftime('%Y-%m-%d %H', playedOnTime, 'unixepoch') AS hour,
+    COUNT(scrobbleHash) AS playcount
+FROM
+    trackslog
+GROUP BY
+    hour
+ORDER BY
+    hour DESC
 LIMIT
     :limit;
 '''

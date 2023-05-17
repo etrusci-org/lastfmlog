@@ -99,6 +99,7 @@ class Core:
             'playsByYear': [],
             'playsByMonth': [],
             'playsByDay': [],
+            'playsByHour': [],
         }
 
         # unique artists
@@ -160,6 +161,15 @@ class Core:
         for v in cur.fetchall():
             stats['playsByDay'].append({
                 'day': v[0],
+                'plays': v[1],
+            })
+
+        # plays by Hour
+        cur.execute(query['playsByHour'], {'limit': self.args['playsbyhourlimit'] if self.args['playsbyhourlimit'] else defaultQueryLimit})
+        for v in cur.fetchall():
+            stats['playsByHour'].append({
+                'hour': v[0].split(' ')[1],
+                'day': v[0].split(' ')[0],
                 'plays': v[1],
             })
 

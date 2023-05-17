@@ -107,6 +107,14 @@ conf['cliparser'] = {
             'help': '[stats] Limit the number of items in plays by day.',
         },
         {
+            'arg': '--playsbyhourlimit',
+            'metavar': 'NUMBER',
+            'type': int,
+            'required': False,
+            'default': None,
+            'help': '[stats] Limit the number of items in plays by hour.',
+        },
+        {
             'arg': '--topartistslimit',
             'metavar': 'NUMBER',
             'type': int,
