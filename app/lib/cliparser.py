@@ -10,9 +10,9 @@ class CLIParser:
         Example Conf
         conf = {
             'info': {
-                'prog': 'cli.py',
-                'description': 'Check README for more detailed help.',
-                'epilog': f'Default data directory: {conf["defaultDataDir"]}',
+                'prog': 'app.py',
+                'description': 'This does something.',
+                'epilog': 'Copyright or whatever',
             },
             'args': [
                 {
@@ -25,14 +25,14 @@ class CLIParser:
                 {
                     'arg': '--updatefromstart',
                     'action': 'store_true',
-                    'help': 'If action is update, fetch tracks from the beginning of time.',
+                    'help': 'Fetch tracks from the beginning of time.',
                 },
                 {
                     'arg': ['-d', '--datadir'],
                     'metavar': 'PATH',
                     'type': str,
                     'required': False,
-                    'default': conf['defaultDataDir'],
+                    'default': '/tmp/foo',
                     'help': 'Override default data directory path.',
                 },
             ],
@@ -46,15 +46,9 @@ class CLIParser:
     def __init__(self, conf) -> None:
         self.conf = conf
         self.parser = argparse.ArgumentParser()
-
-        if self.conf.get('info'):
-            if self.conf['info'].get('prog'):
-                self.parser.prog = self.conf['info']['prog']
-            if self.conf['info'].get('description'):
-                self.parser.description = self.conf['info']['description']
-            if self.conf['info'].get('epilog'):
-                self.parser.epilog = self.conf['info']['epilog']
-
+        self.parser.prog = self.conf['info']['prog']
+        self.parser.description = self.conf['info']['description']
+        self.parser.epilog = self.conf['info']['epilog']
         for arg_conf in self.conf['args']:
             if isinstance(arg_conf['arg'], str):
                 arg = arg_conf['arg']
