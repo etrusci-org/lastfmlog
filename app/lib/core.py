@@ -262,9 +262,9 @@ class Core:
             print(f'{totalPages - page} more {"pages" if totalPages - page > 1 else "page"} to fetch')
             time.sleep(self.conf['api']['subsequentPageRequestDelay'])
             self._fetchRecentTracks(page + 1, _newTracksCount, _skippedTracksCount)
-
-        print(f'Fetched {_newTracksCount} new {"tracks" if _newTracksCount == 0 or _newTracksCount > 1 else "track"}')
-        print(f'Skipped {_skippedTracksCount} {"tracks" if _skippedTracksCount == 0 or _skippedTracksCount > 1 else "track"}')
+        else:
+            print(f'Fetched {_newTracksCount} new {"tracks" if _newTracksCount == 0 or _newTracksCount > 1 else "track"}')
+            print(f'Skipped {_skippedTracksCount} {"tracks" if _skippedTracksCount == 0 or _skippedTracksCount > 1 else "track"}')
 
 
     def _createDatabase(self) -> None:
