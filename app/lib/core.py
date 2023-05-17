@@ -286,14 +286,6 @@ class Core:
             print(f'Fetched {_newTracksCount} new {"tracks" if _newTracksCount == 0 or _newTracksCount > 1 else "track"}')
             print(f'Skipped {_skippedTracksCount} {"tracks" if _skippedTracksCount == 0 or _skippedTracksCount > 1 else "track"}')
 
-            # TODO:
-            # 1 track fetched scrobbleHashes above after _newTracksCount += 1
-            # 2 compare fetched hashes with those from db
-            #   - delete each hash from db which is not in fetched list
-            #
-            # This way we can delete scrobbles on the last.fm page and then run an update with --updatefromstart
-            # and it will delete those we removed remotely.
-
 
     def _createDatabase(self) -> None:
         con, cur = self.DB.connect()
