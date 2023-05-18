@@ -80,10 +80,11 @@ class Core:
         print(f'Local database has {trackslogRowCount} {"tracks" if trackslogRowCount == 0 or trackslogRowCount > 1 else "tracks"} stored and was changed {round(dbAge / 60)}m ago')
 
         # Check for empty or outdated database
-        if trackslogRowCount <= 0 or dbAge > self.args['obsoleteafter']:
-            x = input('Update database first? [Y/n]: ').strip().lower()
-            if x == '' or x == 'y':
-                self.update()
+        if self.args['obsoleteafter'] > 0:
+            if trackslogRowCount <= 0 or dbAge > self.args['obsoleteafter']:
+                x = input('Update database first? [Y/n]: ').strip().lower()
+                if x == '' or x == 'y':
+                    self.update()
 
         stats = {
             '_statsUpdatedOn': time.time(),

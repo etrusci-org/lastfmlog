@@ -79,7 +79,7 @@ conf['cliparser'] = {
             'type': int,
             'required': False,
             'default': conf['argDefaults']['obsoleteafter'],
-            'help': '[stats] Time in seconds until the database is considered obsolete.',
+            'help': '[stats] Time in seconds until the database is considered obsolete. Set to -1 to disable this check.',
         },
         {
             'arg': '--playsbyyearlimit',
