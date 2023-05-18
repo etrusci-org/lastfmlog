@@ -56,7 +56,7 @@ conf['cliparser'] = {
             'metavar': 'ACTION',
             'type': str,
             'choices': ['update', 'stats', 'reset'],
-            'help': 'Do something.',
+            'help': 'Do something. Choose from action, stats or update.',
         },
         {
             'arg': ['-d', '--datadir'],
@@ -64,7 +64,7 @@ conf['cliparser'] = {
             'type': str,
             'required': False,
             'default': conf['argDefaults']['datadir'],
-            'help': 'Override default data directory path.',
+            'help': f'Override default data directory path. Default: {conf["argDefaults"]["datadir"]}',
         },
         # options when action=update
         {
@@ -79,7 +79,7 @@ conf['cliparser'] = {
             'type': int,
             'required': False,
             'default': conf['argDefaults']['obsoleteafter'],
-            'help': '[stats] Time in seconds until the database is considered obsolete. Set to -1 to disable this check.',
+            'help': f'[stats] Set the time in seconds until the database is considered obsolete, and you will be asked if you want to update it first. Set to -1 to disable this check. Default: {conf["argDefaults"]["obsoleteafter"]}',
         },
         {
             'arg': '--playsbyyearlimit',
