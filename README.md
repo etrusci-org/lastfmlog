@@ -1,6 +1,6 @@
 # LastfmLog
 
-[![CodeFactor](https://img.shields.io/codefactor/grade/github/etrusci-org/spartalien.com/main)](https://www.codefactor.io/repository/github/etrusci-org/spartalien.com)
+[![CodeFactor](https://img.shields.io/codefactor/grade/github/etrusci-org/lastfmlog/main)](https://www.codefactor.io/repository/github/etrusci-org/lastfmlog)
 
 Command line tool to download your [Last.fm](https://last.fm) scrobbles *(played tracks)* data into a local database so you can do stuff with it.
 
