@@ -95,11 +95,14 @@ Short: `-d`
 Default: `app/data/`  
 Example: `cli.py update -d /mnt/foo/mydatadir`
 
+<!-- gone:
 #### (*update*) --updatefromstart
 
 Fetch tracks from the beginning of time. Use this in case you have deleted some rows in your local database but don't want to use the `reset` action.  
 Default: *incremental update*  
-Example: `cli.py update --updatefromstart`
+Example: `cli.py update --updatefromstart` -->
+
+<!--TODO: Write new doc for --from and --to  -->
 
 #### (*stats*) --obsoleteafter SECONDS
 
