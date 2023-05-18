@@ -36,4 +36,4 @@ if __name__ == '__main__':
     try:
         main()
     except KeyboardInterrupt:
-        print('\nAction stopped manually the user')
+        print('\nAction manually stopped the user')
