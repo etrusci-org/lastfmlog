@@ -52,18 +52,13 @@ conf['cliparser'] = {
             'help': f'Override default data directory path. Default: {conf["argDefaults"]["datadir"]}',
         },
         # options when action=update
-        # {
-        #     'arg': '--updatefromstart',
-        #     'action': 'store_true',
-        #     'help': '[update] Fetch tracks from the beginning of time.',
-        # },
         {
             'arg': '--from',
             'metavar': 'UNIXTIME',
             'type': int,
             'required': False,
             'default': conf['argDefaults']['from'],
-            'help': f'[update] Only fetch scrobbles after this time. Default: {conf["argDefaults"]["from"]}',
+            'help': f'[update] Only fetch plays after this time. Default: incremental update',
         },
         {
             'arg': '--to',
@@ -71,7 +66,7 @@ conf['cliparser'] = {
             'type': int,
             'required': False,
             'default': conf['argDefaults']['to'],
-            'help': f'[update] Only fetch scrobbles after this time. Default: {conf["argDefaults"]["to"]}',
+            'help': f'[update] Only fetch plays before this time. Default: incremental update',
         },
         # options when action=stats
         {

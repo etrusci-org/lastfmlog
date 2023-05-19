@@ -175,7 +175,6 @@ class Core:
             print(f'Skipped {_skippedTracksCount} {"tracks" if _skippedTracksCount == 0 or _skippedTracksCount > 1 else "track"}')
 
 
-
     def _bakeStatsFile(self) -> None:
         con, cur = self.DB.connect()
 
