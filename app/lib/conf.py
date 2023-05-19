@@ -15,23 +15,6 @@ conf['statsFileName'] = 'stats.json'
 
 conf['dbFileName'] = 'main.sqlite3'
 
-conf['dbSchema'] = '''
-    BEGIN;
-    CREATE TABLE IF NOT EXISTS trackslog (
-        scrobbleHash TEXT NOT NULL UNIQUE,
-        playedOnTime INTEGER NOT NULL UNIQUE,
-        artistName   TEXT NOT NULL,
-        trackName    TEXT NOT NULL,
-        albumName    TEXT DEFAULT NULL,
-        PRIMARY KEY(scrobbleHash)
-    );
-    CREATE INDEX idx_playedOnTime ON trackslog(playedOnTime DESC);
-    CREATE INDEX idx_artistName ON trackslog(artistName COLLATE NOCASE ASC);
-    CREATE INDEX idx_trackName ON trackslog(trackName COLLATE NOCASE ASC);
-    CREATE INDEX idx_albumName ON trackslog(albumName COLLATE NOCASE ASC);
-    COMMIT;
-'''
-
 conf['api'] = {
     'baseURL': 'http://ws.audioscrobbler.com/2.0/',
     'itemsPerPageLimitInitial': 200,
@@ -42,6 +25,8 @@ conf['api'] = {
 conf['argDefaults'] = {
     'datadir': conf['defaultDataDir'],
     'obsoleteafter': 1800,
+    'from': -1,
+    'to': -1,
 }
 
 conf['cliparser'] = {
@@ -59,7 +44,7 @@ conf['cliparser'] = {
             'help': 'Do something. Choose from action, stats or update.',
         },
         {
-            'arg': ['-d', '--datadir'],
+            'arg': '--datadir',
             'metavar': 'PATH',
             'type': str,
             'required': False,
@@ -68,13 +53,24 @@ conf['cliparser'] = {
         },
         # options when action=update
         {
-            'arg': '--updatefromstart',
-            'action': 'store_true',
-            'help': '[update] Fetch tracks from the beginning of time.',
+            'arg': '--from',
+            'metavar': 'UNIXTIME',
+            'type': int,
+            'required': False,
+            'default': conf['argDefaults']['from'],
+            'help': f'[update] Only fetch plays after this time. Default: incremental update',
+        },
+        {
+            'arg': '--to',
+            'metavar': 'UNIXTIME',
+            'type': int,
+            'required': False,
+            'default': conf['argDefaults']['to'],
+            'help': f'[update] Only fetch plays before this time. Default: incremental update',
         },
         # options when action=stats
         {
-            'arg': ['-o', '--obsoleteafter'],
+            'arg': '--obsoleteafter',
             'metavar': 'SECONDS',
             'type': int,
             'required': False,

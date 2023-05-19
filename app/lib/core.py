@@ -13,15 +13,13 @@ from .query import query
 class Core:
     conf: dict
     args: dict
-
     dataDir: str
     secretsFile: str
     dbFile: str
-
     DB: DatabaseSQLite
-
     RAM: dict = {
-        'lastPlayedOnTime': -1,
+        'update.from': -1,
+        'update.to': -1,
     }
 
 
@@ -55,12 +53,15 @@ class Core:
         self.dbFile = os.path.join(self.dataDir, conf['dbFileName'])
         self.DB = DatabaseSQLite(dbFile=self.dbFile)
         if not os.path.isfile(self.dbFile):
+            print(f'Creating database file: {self.dbFile}')
             self._createDatabase()
 
 
     def update(self) -> None:
-        if not self.args['updatefromstart']:
-            self.RAM['lastPlayedOnTime'] = self._getLastPlayedOnTime()
+        if self.args['from'] == -1:
+            self.RAM['update.from'] = self._getLastPlayedOnTime()
+        else:
+            self.RAM['update.from'] = self.args['from']
 
         self._fetchRecentTracks()
 
@@ -68,6 +69,113 @@ class Core:
 
 
     def stats(self) -> None:
+        self._bakeStatsFile()
+
+
+    def reset(self) -> None:
+        x = input('Reset database? [Y/n]: ').strip().lower()
+        if x != 'y':
+            return
+
+        con, cur = self.DB.connect()
+        q = 'DELETE FROM trackslog;'
+        cur.execute(q)
+        print(f'Deleted {cur.rowcount} {"tracks" if cur.rowcount == 0 or cur.rowcount > 1 else "tracks"}')
+        con.commit()
+        con.close()
+
+        self.DB.vacuum()
+
+
+    def _getLastPlayedOnTime(self) -> int:
+        con, cur = self.DB.connect()
+        q = 'SELECT playedOnTime FROM trackslog LIMIT 1;'
+        cur.execute(q)
+        dump = cur.fetchone()
+        con.close()
+        return dump[0] if dump else self.RAM['update.from']
+
+
+    def _fetchRecentTracks(self, page: int = 1, _newTracksCount: int = 0, _skippedTracksCount: int = 0) -> None:
+        # Bake API url
+        url = self.conf['api']['baseURL']
+        url += '?method=user.getrecenttracks'
+        url += '&format=json'
+        url += '&extended=0'
+        url += f'&limit={self.conf["api"]["itemsPerPageLimitInitial"] if self.RAM["update.from"] == -1 else self.conf["api"]["itemsPerPageLimitIncremental"]}'
+        url += f'&from={self.RAM["update.from"] + 1}'
+        url += f'&to={self.RAM["update.to"] if self.RAM["update.to"] != -1 else ""}'
+        url += f'&page={page}'
+        url += f'&user={self.secrets["apiUser"]}'
+        url += f'&api_key={self.secrets["apiKey"]}'
+
+        print(f'Fetching data page {page}')
+
+        # Fetch API data from baked URL and make sure we got the all the keys we need
+        # We trust the API and assume it's all good once we got the recenttracks key
+        # and recenttracks.track is a list (there are no tracks if its a dict)
+        try:
+            apiData = self._fetchAPIData(url)
+            apiData = json.loads(apiData)
+
+            if not apiData.get('recenttracks'):
+                raise KeyError('Missing key: recenttracks')
+
+            if not isinstance(apiData['recenttracks']['track'], list):
+                print('no new tracks to fetch')
+                return
+
+        except json.JSONDecodeError as e:
+            print(f'Error while decoding API data: {e}')
+            return
+        except KeyError as e:
+            print(f'Error while parsing API data: {e}')
+            return
+
+        # Calculate total pages.
+        # The check for zero is necessary if the from parameter in the API URL is in the future
+        totalPages = int(apiData['recenttracks']['@attr']['totalPages'])
+        if totalPages <= 0:
+            totalPages = 1
+
+        # Store tracks in database
+        try:
+            con, cur = self.DB.connect()
+            for track in apiData['recenttracks']['track']:
+                # silently skip currently playing track
+                if not track.get('date'):
+                    continue
+
+                cur.execute(query['insertNewTrack'], {
+                    'scrobbleHash': hashlib.sha256(f'{track["date"]["uts"]}{track["artist"]["#text"]}{track["name"]}{track["album"]["#text"]}'.lower().encode()).hexdigest(),
+                    'playedOnTime': track['date']['uts'],
+                    'artistName': track['artist']['#text'],
+                    'trackName': track['name'],
+                    'albumName': track['album']['#text'] if track['album']['#text'] else None,
+                })
+                print(f'+ {track["artist"]["#text"]} - {track["name"]}')
+                _newTracksCount += 1
+        except Exception as e:
+            if str(e).find('UNIQUE') != -1:
+                pass
+            else:
+                print(f'! {e} | {track["artist"]["#text"]} - {track["name"]}')
+            _skippedTracksCount += 1
+        finally:
+            con.commit()
+            con.close()
+
+        # Fetch the next data page if there is one
+        if page < totalPages:
+            print(f'{totalPages - page} more {"pages" if totalPages - page > 1 else "page"} to fetch')
+            time.sleep(self.conf['api']['subsequentPageRequestDelay'])
+            self._fetchRecentTracks(page + 1, _newTracksCount, _skippedTracksCount)
+        else:
+            print(f'Fetched {_newTracksCount} new {"tracks" if _newTracksCount == 0 or _newTracksCount > 1 else "track"}')
+            print(f'Skipped {_skippedTracksCount} {"tracks" if _skippedTracksCount == 0 or _skippedTracksCount > 1 else "track"}')
+
+
+    def _bakeStatsFile(self) -> None:
         con, cur = self.DB.connect()
 
         # 'member stuff for later use
@@ -184,114 +292,10 @@ class Core:
             print(f'Stats saved to file: {statsFile}')
 
 
-    def reset(self) -> None:
-        x = input('Reset database? [Y/n]: ').strip().lower()
-        if x != 'y':
-            return
-
-        con, cur = self.DB.connect()
-        q = 'DELETE FROM trackslog;'
-        cur.execute(q)
-        print(f'Deleted {cur.rowcount} {"tracks" if cur.rowcount == 0 or cur.rowcount > 1 else "tracks"}')
-        con.commit()
-        con.close()
-
-        self.DB.vacuum()
-
-
-    def _getLastPlayedOnTime(self) -> int:
-        con, cur = self.DB.connect()
-        q = 'SELECT playedOnTime FROM trackslog LIMIT 1;'
-        cur.execute(q)
-        dump = cur.fetchone()
-
-        con.close()
-        return dump[0] if dump else self.RAM['lastPlayedOnTime']
-
-
-    def _fetchRecentTracks(self, page: int = 1, _newTracksCount: int = 0, _skippedTracksCount: int = 0) -> None:
-        # Bake API url
-        url  = self.conf['api']['baseURL']
-        url += '?method=user.getrecenttracks'
-        url += '&format=json'
-        url += '&extended=0'
-        url += f'&limit={self.conf["api"]["itemsPerPageLimitInitial"] if self.RAM["lastPlayedOnTime"] == -1 else self.conf["api"]["itemsPerPageLimitIncremental"]}'
-        url += f'&from={self.RAM["lastPlayedOnTime"] + 1}'
-        url += f'&page={page}'
-        url += f'&user={self.secrets["apiUser"]}'
-        url += f'&api_key={self.secrets["apiKey"]}'
-
-        print(f'Fetching data page {page}')
-
-        # Fetch API data from baked URL and make sure we got the all the keys we need
-        # We trust the API and assume it's all good once we got the recenttracks key
-        # and recenttracks.track is a list (there are no tracks if its a dict)
-        try:
-            apiData = self._fetchAPIData(url)
-            apiData = json.loads(apiData)
-
-            if not apiData.get('recenttracks'):
-                raise KeyError('Missing key: recenttracks')
-
-            if not isinstance(apiData['recenttracks']['track'], list):
-                print('no new tracks to fetch')
-                return
-
-        except json.JSONDecodeError as e:
-            print(f'Error while decoding API data: {e}')
-            return
-        except KeyError as e:
-            print(f'Error while parsing API data: {e}')
-            return
-
-        # Calculate total pages.
-        # The check for zero is necessary if the from parameter in the API URL is in the future
-        totalPages = int(apiData['recenttracks']['@attr']['totalPages'])
-        if totalPages <= 0:
-            totalPages = 1
-
-        # Store tracks in database
-        try:
-            con, cur = self.DB.connect()
-            for track in apiData['recenttracks']['track']:
-                # silently skip currently playing track
-                if not track.get('date'):
-                    continue
-                q = 'INSERT INTO trackslog (scrobbleHash, playedOnTime, artistName, trackName, albumName) VALUES (:scrobbleHash, :playedOnTime, :artistName, :trackName, :albumName);'
-                v = {
-                    'scrobbleHash': hashlib.sha256(f'{track["date"]["uts"]}{track["artist"]["#text"]}{track["name"]}{track["album"]["#text"]}'.lower().encode()).hexdigest(),
-                    'playedOnTime': track['date']['uts'],
-                    'artistName': track['artist']['#text'],
-                    'trackName': track['name'],
-                    'albumName': track['album']['#text'] if track['album']['#text'] else None,
-                }
-                cur.execute(q, v)
-                print(f'+ {track["artist"]["#text"]} - {track["name"]}')
-                _newTracksCount += 1
-        except Exception as e:
-            if str(e).find('UNIQUE') != -1:
-                print(f'~ {track["artist"]["#text"]} - {track["name"]}')
-            else:
-                print(f'! {e} | {track["artist"]["#text"]} - {track["name"]}')
-            _skippedTracksCount += 1
-        finally:
-            con.commit()
-            con.close()
-
-        # Fetch the next data page if there is one
-        if page < totalPages:
-            print(f'{totalPages - page} more {"pages" if totalPages - page > 1 else "page"} to fetch')
-            time.sleep(self.conf['api']['subsequentPageRequestDelay'])
-            self._fetchRecentTracks(page + 1, _newTracksCount, _skippedTracksCount)
-        else:
-            print(f'Fetched {_newTracksCount} new {"tracks" if _newTracksCount == 0 or _newTracksCount > 1 else "track"}')
-            print(f'Skipped {_skippedTracksCount} {"tracks" if _skippedTracksCount == 0 or _skippedTracksCount > 1 else "track"}')
-
-
     def _createDatabase(self) -> None:
         con, cur = self.DB.connect()
         try:
-            cur.executescript(self.conf['dbSchema'])
+            cur.executescript(query['dbSchema'])
         except Exception as e:
             print(f'Error while creating database: {e}')
             os.unlink(self.dbFile)

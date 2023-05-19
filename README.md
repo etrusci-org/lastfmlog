@@ -91,22 +91,26 @@ Multiple options can be set at once.
 #### (*global*) --datadir PATH
 
 Override the default data directory path.  
-Short: `-d`  
 Default: `app/data/`  
-Example: `cli.py update -d /mnt/foo/mydatadir`
+Example: `cli.py update --datadir /mnt/foo/mydatadir`
 
-#### (*update*) --updatefromstart
+#### (*update*) --from UNIXTIME
 
-Fetch tracks from the beginning of time. Use this in case you have deleted some rows in your local database but don't want to use the `reset` action.  
+Only fetch plays after this time.  
 Default: *incremental update*  
-Example: `cli.py update --updatefromstart`
+Example: `cli.py update --from 1684443099`
+
+#### (*update*) --to UNIXTIME
+
+Only fetch plays before this time.  
+Default: *incremental update*  
+Example: `cli.py update --to 1684443099`
 
 #### (*stats*) --obsoleteafter SECONDS
 
 Set the time in seconds until the database is considered obsolete, and you will be asked if you want to update it first. Set to `-1` to disable this check.  
-Short: `-o`  
 Default: `1800`  
-Example: `cli.py stats -o 900`
+Example: `cli.py stats --obsoleteafter 900`
 
 #### (*stats*) --playsbyyearlimit NUMBER
 
@@ -118,55 +122,36 @@ Example: `cli.py stats --playsbyyearlimit 10`
 
 Limit the number of items in *plays by month*.  
 Default: *unlimited*  
-Example: `cli.py stats --playsbymonthlimit 10`
+Example: `cli.py stats --playsbymonthlimit 12`
 
 #### (*stats*) --playsbydaylimit NUMBER
 
 Limit the number of items in *plays by day*.  
 Default: *unlimited*  
-Example: `cli.py stats --playsbydaylimit 10`
+Example: `cli.py stats --playsbydaylimit 7`
 
 #### (*stats*) --playsbyhourlimit NUMBER
 
 Limit the number of items in *plays by hour*.  
 Default: *unlimited*  
-Example: `cli.py stats --playsbyhourlimit 10`
+Example: `cli.py stats --playsbyhourlimit 24`
 
 #### (*stats*) --topartistslimit NUMBER
 
 Limit the number of items in *top artists*.  
-Default: *unlimited*
+Default: *unlimited*  
+Example: `cli.py stats --topartistslimit 10`
 
 #### (*stats*) --toptrackslimit NUMBER
 
 Limit the number of items in *top tracks*.  
-Default: *unlimited*
+Default: *unlimited*  
+Example: `cli.py stats --toptrackslimit 10`
 
 #### (*stats*) --topalbumslimit NUMBER
 
 Limit the number of items in *top albums*.  
-Default: *unlimited*
+Default: *unlimited*  
+Example: `cli.py stats --topalbumslimit 10`
 
 ---
-
-## Examples
-
-```bash
-cli.py update
-```
-
-```bash
-cli.py stats
-```
-
-```bash
-cli.py reset
-```
-
-```bash
-cli.py stats --obsoleteafter 600 
-```
-
-```bash
-cli.py stats --topartistslimit 20 --toptrackslimit 20 --topalbumslimit 20 --playsbymonthlimit 12 --playsbydaylimit 30 --playsbyhourlimit 24
-```
