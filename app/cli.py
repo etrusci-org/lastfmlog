@@ -8,8 +8,6 @@ import lib
 
 
 def main() -> None:
-    print(lib.conf['banner'])
-
     CLIParser = lib.CLIParser(conf=lib.conf['cliparser'])
 
     if len(sys.argv) < 2:
