@@ -45,12 +45,6 @@ conf['cliparser'] = {
         },
         # global options
         {
-            'arg': ['-v', '--verbose'],
-            'action': 'store_true',
-            'required': False,
-            'help': f'Show more output while actions are executed.',
-        },
-        {
             'arg': '--datadir',
             'metavar': 'PATH',
             'type': str,
@@ -74,6 +68,12 @@ conf['cliparser'] = {
             'required': False,
             'default': None,
             'help': '[update] Only fetch plays before this time.',
+        },
+        {
+            'arg': ['-v', '--verbose'],
+            'action': 'store_true',
+            'required': False,
+            'help': f'[update] Show fetched tracks while updating.',
         },
     ]
 }
