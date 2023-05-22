@@ -29,6 +29,9 @@ def main():
     if cliargs['action'] == 'update':
         App.update()
 
+    if cliargs['action'] == 'stats':
+        App.stats()
+
     if cliargs['action'] == 'reset':
         App.reset()
 

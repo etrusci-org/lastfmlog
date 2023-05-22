@@ -16,6 +16,8 @@ class App:
     conf: dict
     args: dict
 
+    timezoneOffset: int
+
     dataDir: str
     secretsFile: str
     databaseFile: str
@@ -28,6 +30,7 @@ class App:
         # 'member
         self.conf = conf
         self.args = args
+        self.timezoneOffset = time.localtime().tm_gmtoff
 
         # Assume data directory path
         if args['datadir'] == None:
@@ -92,6 +95,135 @@ class App:
 
         # Janitor
         self.Database.vacuum()
+
+
+    def stats(self) -> None:
+        self._createStatsFile()
+
+
+    def _createStatsFile(self) -> None:
+        con, cur = self.Database.connect()
+
+        # Prepare stats data dict and add some useful extra information to it
+        stats = {
+            '_statsModifiedOn': int(time.time()),
+            '_databaseModifiedOn': int(os.path.getmtime(self.databaseFile)),
+            '_timezoneOffset': self.timezoneOffset,
+            'totalPlays': 0,
+            'uniqueArtists': 0,
+            'uniqueTracks': 0,
+            'uniqueAlbums': 0,
+            'topArtists': [],
+            'topTracks': [],
+            'topAlbums': [],
+            'playsByYear': [],
+            'playsByMonth': [],
+            'playsByDay': [],
+            'playsByHour': [],
+        }
+
+        # Total plays
+        cur.execute(databaseQuery['totalPlays'])
+        stats['totalPlays'] = cur.fetchone()[0]
+
+        # Unique artists
+        cur.execute(databaseQuery['uniqueArtists'])
+        stats['uniqueArtists'] = cur.fetchone()[0]
+
+        # Unique tracks
+        cur.execute(databaseQuery['uniqueTracks'])
+        stats['uniqueTracks'] = cur.fetchone()[0]
+
+        # Unique albums
+        cur.execute(databaseQuery['uniqueAlbums'])
+        stats['uniqueAlbums'] = cur.fetchone()[0]
+
+        # Top artists
+        cur.execute(databaseQuery['topArtists'], {
+            'limit': 10,
+        })
+        for row in cur:
+            stats['topArtists'].append({
+                'plays': row[1],
+                'artist': row[0],
+            })
+
+        # Top tracks
+        cur.execute(databaseQuery['topTracks'], {
+            'limit': 10,
+        })
+        for row in cur:
+            stats['topTracks'].append({
+                'plays': row[2],
+                'artist': row[0],
+                'track': row[1],
+            })
+
+        # Top albums
+        cur.execute(databaseQuery['topAlbums'], {
+            'limit': 10,
+        })
+        for row in cur:
+            stats['topAlbums'].append({
+                'plays': row[2],
+                'artist': row[0],
+                'album': row[1],
+            })
+
+        # Plays by year
+        cur.execute(databaseQuery['playsByYear'], {
+            'limit': 10,
+        })
+        for row in cur:
+            stats['playsByYear'].append({
+                'plays': row[1],
+                'year': row[0],
+            })
+
+        # Plays by month
+        cur.execute(databaseQuery['playsByMonth'], {
+            'limit': 10,
+        })
+        for row in cur:
+            month = self._convertDatetimeStringToLocalTimezone(f'{row[0]}-01 00:00:00')[0:7]
+            stats['playsByMonth'].append({
+                'plays': row[1],
+                'month': month,
+            })
+
+        # Plays by day
+        cur.execute(databaseQuery['playsByDay'], {
+            'limit': 10,
+        })
+        for row in cur:
+            day = self._convertDatetimeStringToLocalTimezone(f'{row[0]} 00:00:00')[0:10]
+            stats['playsByDay'].append({
+                'plays': row[1],
+                'day': day,
+            })
+
+        # Plays by hour
+        cur.execute(databaseQuery['playsByHour'], {
+            'limit': 10,
+        })
+        for row in cur:
+            dump = self._convertDatetimeStringToLocalTimezone(f'{row[0]}:00:00')
+            hour = dump[11:13]
+            day = dump[0:10]
+            stats['playsByHour'].append({
+                'plays': row[1],
+                'hour': hour,
+                'day': day,
+            })
+
+        # Don't need the database anymore
+        con.close()
+
+        # Finally save the stats file
+        statsFile = os.path.join(self.dataDir, 'stats.json')
+        with open(statsFile, mode='w') as file:
+            file.write(json.dumps(stats, ensure_ascii=False, indent=4))
+            print(f'Stats saved to file: {statsFile}')
 
 
     def reset(self) -> None:
@@ -219,6 +351,13 @@ class App:
 
     def _getWhoami(self) -> dict:
         return self._fetchJSONAPIData(url=f'{self.conf["apiBaseURL"]}?method=user.getinfo&format=json&user={self.secrets["apiUser"]}&api_key={self.secrets["apiKey"]}')
+
+
+    def _convertDatetimeStringToLocalTimezone(self, datetime: str) -> str:
+        unixTimestamp = time.mktime(time.strptime(datetime, '%Y-%m-%d %H:%M:%S'))
+        localTimestamp = unixTimestamp + self.timezoneOffset
+        localDatetime = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(localTimestamp))
+        return localDatetime
 
 
     @staticmethod

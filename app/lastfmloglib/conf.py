@@ -25,6 +25,7 @@ conf['apiRequestPagingDelay'] = 7
 conf['cliparserActions'] = [
     'whoami',
     'update',
+    'stats',
     'reset',
 ]
 
