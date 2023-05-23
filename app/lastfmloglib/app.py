@@ -89,8 +89,6 @@ class App:
             print(npJSON)
 
 
-
-
     def update(self) -> None:
         con, cur = self.Database.connect()
 
@@ -367,7 +365,6 @@ class App:
         return np
 
 
-
     def _createSecretsFile(self) -> None:
         print(f'Creating secrets file: {self.secretsFile}')
         print('No worries if you make mistakes, you can edit the file in a text editor.')
@@ -434,9 +431,11 @@ class App:
         return localDatetime
 
 
-    @staticmethod
-    def _fetchJSONAPIData(url: str) -> dict:
+    def _fetchJSONAPIData(self, url: str) -> dict:
         try:
+            if not url.lower().startswith(self.conf['apiBaseURL']):
+                raise ValueError(f'Invalid API URL. Must start with: {self.conf["apiBaseURL"]}')
+
             with urllib.request.urlopen(url) as response:
                 return json.load(response)
 
