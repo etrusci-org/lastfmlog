@@ -433,7 +433,7 @@ class App:
 
     def _fetchJSONAPIData(self, url: str) -> dict:
         try:
-            if not url.lower().startswith(self.conf['apiBaseURL']):
+            if not url.lower().startswith(self.conf['apiBaseURL']): # nosec B310
                 raise ValueError(f'Invalid API URL. Must start with: {self.conf["apiBaseURL"]}')
 
             with urllib.request.urlopen(url) as response:
