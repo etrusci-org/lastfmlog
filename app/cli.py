@@ -51,3 +51,5 @@ if __name__ == '__main__':
         print('\nProgram interrupted by user.')
     except Exception as e:
         print(f'[BOO] {e}', end='\n\n')
+        print('Complete error log:')
+        raise
