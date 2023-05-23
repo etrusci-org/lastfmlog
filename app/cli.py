@@ -23,6 +23,9 @@ def main():
     App = lastfmloglib.App(conf=lastfmloglib.conf, args=cliargs)
 
     # Run actions
+    if not cliargs['json']:
+        print(f'[lastfmlog {cliargs["action"]}]', end='\n\n')
+
     if cliargs['action'] == 'whoami':
         App.whoami()
 
@@ -31,6 +34,9 @@ def main():
 
     if cliargs['action'] == 'stats':
         App.stats()
+
+    if cliargs['action'] == 'nowplaying':
+        App.nowplaying()
 
     if cliargs['action'] == 'reset':
         App.reset()
@@ -44,6 +50,4 @@ if __name__ == '__main__':
     except KeyboardInterrupt:
         print('\nProgram interrupted by user.')
     except Exception as e:
-        print(f'[BOO] {e}')
-        print()
-        raise
+        print(f'[BOO] {e}', end='\n\n')

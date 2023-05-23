@@ -16,7 +16,7 @@ class App:
     conf: dict
     args: dict
 
-    timezoneOffset: int
+    localTimezoneOffset: int
 
     dataDir: str
     secretsFile: str
@@ -30,7 +30,7 @@ class App:
         # 'member
         self.conf = conf
         self.args = args
-        self.timezoneOffset = time.localtime().tm_gmtoff
+        self.localTimezoneOffset = time.localtime().tm_gmtoff
 
         # Assume data directory path
         if args['datadir'] == None:
@@ -73,6 +73,24 @@ class App:
         self._printWhoami()
 
 
+    def nowplaying(self) -> None:
+        np = self._fetchNowPlayingTrack()
+
+        if not self.args['json']:
+            if not np['artist']:
+                print('Silence')
+            else:
+                print(f'artist: {np["artist"]}')
+                print(f' track: {np["track"]}')
+                if np['album']:
+                    print(f' album: {np["album"]}')
+        else:
+            npJSON = json.dumps(np, ensure_ascii=False, indent=4)
+            print(npJSON)
+
+
+
+
     def update(self) -> None:
         con, cur = self.Database.connect()
 
@@ -101,14 +119,20 @@ class App:
         self._createStatsFile()
 
 
-    def _createStatsFile(self) -> None:
+    def reset(self) -> None:
+        self._resetDatabase()
+        self.Database.vacuum()
+
+
+    def _getStats(self) -> dict:
         con, cur = self.Database.connect()
 
         # Prepare stats data dict and add some useful extra information to it
         stats = {
+            '_username': self.secrets['apiUser'],
             '_statsModifiedOn': int(time.time()),
             '_databaseModifiedOn': int(os.path.getmtime(self.databaseFile)),
-            '_timezoneOffset': self.timezoneOffset,
+            '_localTimezoneOffset': self.localTimezoneOffset,
             'totalPlays': 0,
             'uniqueArtists': 0,
             'uniqueTracks': 0,
@@ -140,7 +164,7 @@ class App:
 
         # Top artists
         cur.execute(databaseQuery['topArtists'], {
-            'limit': 10,
+            'limit': self.args['limittopartists'] if self.args['limittopartists'] else stats['uniqueArtists'],
         })
         for row in cur:
             stats['topArtists'].append({
@@ -150,7 +174,7 @@ class App:
 
         # Top tracks
         cur.execute(databaseQuery['topTracks'], {
-            'limit': 10,
+            'limit': self.args['limittoptracks'] if self.args['limittoptracks'] else stats['uniqueTracks'],
         })
         for row in cur:
             stats['topTracks'].append({
@@ -161,7 +185,7 @@ class App:
 
         # Top albums
         cur.execute(databaseQuery['topAlbums'], {
-            'limit': 10,
+            'limit': self.args['limittopalbums'] if self.args['limittopalbums'] else stats['uniqueAlbums'],
         })
         for row in cur:
             stats['topAlbums'].append({
@@ -172,7 +196,7 @@ class App:
 
         # Plays by year
         cur.execute(databaseQuery['playsByYear'], {
-            'limit': 10,
+            'limit': self.args['limitplaysbyyear'] if self.args['limitplaysbyyear'] else stats['totalPlays'],
         })
         for row in cur:
             stats['playsByYear'].append({
@@ -182,7 +206,7 @@ class App:
 
         # Plays by month
         cur.execute(databaseQuery['playsByMonth'], {
-            'limit': 10,
+            'limit': self.args['limitplaysbymonth'] if self.args['limitplaysbymonth'] else stats['totalPlays'],
         })
         for row in cur:
             month = self._convertDatetimeStringToLocalTimezone(f'{row[0]}-01 00:00:00')[0:7]
@@ -193,7 +217,7 @@ class App:
 
         # Plays by day
         cur.execute(databaseQuery['playsByDay'], {
-            'limit': 10,
+            'limit': self.args['limitplaysbyday'] if self.args['limitplaysbyday'] else stats['totalPlays'],
         })
         for row in cur:
             day = self._convertDatetimeStringToLocalTimezone(f'{row[0]} 00:00:00')[0:10]
@@ -204,7 +228,7 @@ class App:
 
         # Plays by hour
         cur.execute(databaseQuery['playsByHour'], {
-            'limit': 10,
+            'limit': self.args['limitplaysbyhour'] if self.args['limitplaysbyhour'] else stats['totalPlays'],
         })
         for row in cur:
             dump = self._convertDatetimeStringToLocalTimezone(f'{row[0]}:00:00')
@@ -219,16 +243,16 @@ class App:
         # Don't need the database anymore
         con.close()
 
-        # Finally save the stats file
+        return stats
+
+
+    def _createStatsFile(self) -> None:
+        stats = self._getStats()
         statsFile = os.path.join(self.dataDir, 'stats.json')
+
         with open(statsFile, mode='w') as file:
             file.write(json.dumps(stats, ensure_ascii=False, indent=4))
             print(f'Stats saved to file: {statsFile}')
-
-
-    def reset(self) -> None:
-        self._resetDatabase()
-        self.Database.vacuum()
 
 
     def _fetchRecentTracks(self, page: int = 1, _addedTracks: int = 0) -> None:
@@ -300,17 +324,67 @@ class App:
             print(f'Added {_addedTracks} {"tracks" if _addedTracks == 0 or _addedTracks > 1 else "track"}')
 
 
+    def _fetchNowPlayingTrack(self) -> dict:
+        # Bake API URL
+        apiURL = self.conf['apiBaseURL']
+        apiURL += '?method=user.getrecenttracks'
+        apiURL += '&format=json'
+        apiURL += '&extended=1'
+        apiURL += f'&limit=1'
+        apiURL += f'&user={self.secrets["apiUser"]}'
+        apiURL += f'&api_key={self.secrets["apiKey"]}'
+
+        # Fetch API data from URL
+        apiData = self._fetchJSONAPIData(apiURL)
+
+        np = {
+            'artist': None,
+            'track': None,
+            'album': None,
+        }
+
+        # Check if we got the stuff we need in apiData or stop
+        if not apiData.get('recenttracks'):
+            raise KeyError('Missing "recenttracks" key')
+
+        if not isinstance(apiData['recenttracks']['track'], list):
+            raise TypeError('Incorrect track list type')
+
+        if not apiData['recenttracks']['track'][0].get('@attr'):
+            return np
+
+        if not apiData['recenttracks']['track'][0]['@attr'].get('nowplaying'):
+            return np
+
+        # Return now playing track info
+        track = apiData['recenttracks']['track'][0]
+
+        if track['@attr']['nowplaying'] == 'true':
+            np['artist'] = track["artist"]["name"]
+            np['track'] = track["name"]
+            np['album'] = track["album"]["#text"] if track["album"]["#text"] else None
+
+        return np
+
+
+
     def _createSecretsFile(self) -> None:
         print(f'Creating secrets file: {self.secretsFile}')
         print('No worries if you make mistakes, you can edit the file in a text editor.')
         print('See the README on how to get an API key.')
 
         secrets = self.conf['secretsTemplate']
-        secrets['apiUser'] = input('Enter your Last.fm username: ').strip()
-        secrets['apiKey'] = input('Enter your Last.fm API key: ').strip()
+        apiUser = input('Enter your Last.fm username: ').strip()
+        apiKey = input('Enter your Last.fm API key: ').strip()
+
+        if apiUser:
+            secrets['apiUser'] = apiUser
+
+        if apiKey:
+            secrets['apiKey'] = apiKey
 
         with open(self.secretsFile, 'x') as file:
-            json.dump(obj=secrets, fp=file, indent=4)
+            json.dump(obj=secrets, fp=file, ensure_ascii=False, indent=4)
 
 
     def _createDatabaseFile(self) -> None:
@@ -355,7 +429,7 @@ class App:
 
     def _convertDatetimeStringToLocalTimezone(self, datetime: str) -> str:
         unixTimestamp = time.mktime(time.strptime(datetime, '%Y-%m-%d %H:%M:%S'))
-        localTimestamp = unixTimestamp + self.timezoneOffset
+        localTimestamp = unixTimestamp + self.localTimezoneOffset
         localDatetime = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(localTimestamp))
         return localDatetime
 
@@ -372,5 +446,5 @@ class App:
 
     @staticmethod
     def _getPlayHash(track: dict) -> str:
-        raw = str(track["date"]["uts"] + track["artist"]["name"] + track["name"] + track["album"]["#text"]).lower()
+        raw = str(track['date']['uts'] + track['artist']['name'] + track['name'] + track['album']['#text']).lower()
         return hashlib.sha256(raw.encode()).hexdigest()

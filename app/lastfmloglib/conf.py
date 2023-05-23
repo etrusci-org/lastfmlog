@@ -24,16 +24,18 @@ conf['apiRequestPagingDelay'] = 7
 
 conf['cliparserActions'] = [
     'whoami',
+    'nowplaying',
     'update',
     'stats',
     'reset',
 ]
 
+
 conf['cliparser'] = {
     'info': {
         'prog': 'cli.py',
-        'description': 'For more detailed explanations, please see the README.',
-        'epilog': '',
+        'description': 'For more detailed explanations, please see the README <https://github.com/etrusci-org/lastfmlog#readme>.',
+        'epilog': 'Made by arT2 <etrusci.org>',
     },
     'args': [
         {
@@ -51,6 +53,13 @@ conf['cliparser'] = {
             'required': False,
             'default': None,
             'help': f'Override default data directory path.',
+        },
+        # nowplaying options
+        {
+            'arg': '--json',
+            'action': 'store_true',
+            'required': False,
+            'help': f'[nowplaying] Show JSON instead of plain text output.',
         },
         # update options
         {
@@ -74,6 +83,63 @@ conf['cliparser'] = {
             'action': 'store_true',
             'required': False,
             'help': f'[update] Show fetched tracks while updating.',
+        },
+        # stats options
+        {
+            'arg': '--limittopartists',
+            'metavar': 'NUMBER',
+            'type': int,
+            'required': False,
+            'default': None,
+            'help': '[stats] Limit the number of items in top artists.',
+        },
+        {
+            'arg': '--limittoptracks',
+            'metavar': 'NUMBER',
+            'type': int,
+            'required': False,
+            'default': None,
+            'help': '[stats] Limit the number of items in top tracks.',
+        },
+        {
+            'arg': '--limittopalbums',
+            'metavar': 'NUMBER',
+            'type': int,
+            'required': False,
+            'default': None,
+            'help': '[stats] Limit the number of items in top albums.',
+        },
+        {
+            'arg': '--limitplaysbyyear',
+            'metavar': 'NUMBER',
+            'type': int,
+            'required': False,
+            'default': None,
+            'help': '[stats] Limit the number of items in plays by year.',
+        },
+        {
+            'arg': '--limitplaysbymonth',
+            'metavar': 'NUMBER',
+            'type': int,
+            'required': False,
+            'default': None,
+            'help': '[stats] Limit the number of items in plays by month.',
+        },
+        {
+            'arg': '--limitplaysbyday',
+            'metavar': 'NUMBER',
+            'type': int,
+            'required': False,
+            'default': None,
+            'help': '[stats] Limit the number of items in plays by day.',
+        },
+        {
+            'arg': '--limitplaysbyhour',
+            'metavar': 'NUMBER',
+            'type': int,
+            'required': False,
+            'default': None,
+            'help': '[stats] Limit the number of items in plays by hour.',
         },
     ]
 }
