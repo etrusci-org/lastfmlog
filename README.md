@@ -2,7 +2,7 @@
 
 Command line tool that downloads your [Last.fm](https://last.fm) scrobbles (played tracks) data into a local database so you can do something with it.
 
-![GitHub release (latest by date including pre-releases)](https://img.shields.io/github/v/release/etrusci-org/lastfmlog?include_prereleases&label=latest+release) ![GitHub issues](https://img.shields.io/github/issues/etrusci-org/lastfmlog) ![GitHub branch checks state](https://img.shields.io/github/checks-status/etrusci-org/lastfmlog/main?label=checks+main+branch) ![GitHub branch checks state](https://img.shields.io/github/checks-status/etrusci-org/lastfmlog/dev?label=checks+dev+branch) ![CodeFactor Grade](https://img.shields.io/codefactor/grade/github/etrusci-org/lastfmlog/main)
+![GitHub release (latest by date including pre-releases)](https://img.shields.io/github/v/release/etrusci-org/lastfmlog?include_prereleases&label=latest+release) ![GitHub issues](https://img.shields.io/github/issues/etrusci-org/lastfmlog)
 
 - [Dependencies](#dependencies)
 - [Install](#install)
@@ -10,6 +10,7 @@ Command line tool that downloads your [Last.fm](https://last.fm) scrobbles (play
 - [Usage](#usage)
 - [Database File](#database-file)
 - [Statistics File](#statistics-file)
+- [Secrets File Security](#secrets-file-security)
 - [License](#license)
 
 ---
@@ -75,10 +76,8 @@ Example:
 ```text
 cli.py whoami
 
-Creating secrets file: /path/to/data/secrets.json
-
-No worries if you make mistakes, you can edit the file in a text editor.
-See the README on how to get an API key.
+Creating secrets file: /path/to/data/secrets.dat
+See the README on how to get your API credentials.
 
 Enter your Last.fm username: Scrobbler123
 Enter your Last.fm API key: ***
@@ -93,7 +92,7 @@ Creating database file: /path/to/data/database.sqlite3
         albums: 1291
 ```
 
-All good if you see a quick overview of your account at the end. If not, check your API credentials again. You can either edit the secrets file in a text editor or delete it to getting asked again on the next run.
+All good if you see a quick overview of your account at the end. If not, check your API credentials and delete the secrets file to getting asked again on the next run.
 
 ---
 
@@ -469,6 +468,12 @@ Example:
     ]
 }
 ```
+
+---
+
+## Secrets File Security
+
+Please keep in mind that anyone who has access to your files on the system LastfmLog is installed, can decode and read your secrets file with just a little bit Python knowledge.
 
 ---
 

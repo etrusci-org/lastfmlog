@@ -4,6 +4,7 @@ import urllib.request
 import time
 import datetime
 import hashlib
+import base64
 
 from .database import DatabaseSQLite
 from .databaseschema import databaseSchema
@@ -39,7 +40,7 @@ class App:
             self.dataDir = args['datadir']
 
         # Assume secrets file path
-        self.secretsFile = os.path.join(self.dataDir, 'secrets.json')
+        self.secretsFile = os.path.join(self.dataDir, 'secrets.dat')
 
         # Assume database file path
         self.databaseFile = os.path.join(self.dataDir, 'database.sqlite3')
@@ -61,10 +62,12 @@ class App:
 
         # Load secrets
         try:
-            with open(self.secretsFile) as file:
-                self.secrets = json.load(file)
-        except json.JSONDecodeError as e:
-            raise SyntaxError(f'Synatx error in secrets file: {e}')
+            with open(self.secretsFile, 'rb') as file:
+                secrets = file.read()
+                secrets = base64.b64decode(secrets)
+                self.secrets = json.loads(secrets)
+        except Exception as e:
+            raise Exception(f'Error while loading secrets file: {e}')
 
         # Database and secrets file are valid if we reach this line
 
@@ -367,8 +370,7 @@ class App:
 
     def _createSecretsFile(self) -> None:
         print(f'Creating secrets file: {self.secretsFile}')
-        print('No worries if you make mistakes, you can edit the file in a text editor.')
-        print('See the README on how to get an API key.')
+        print('See the README on how to get your API credentials.')
 
         secrets = self.conf['secretsTemplate']
         apiUser = input('Enter your Last.fm username: ').strip()
@@ -380,8 +382,10 @@ class App:
         if apiKey:
             secrets['apiKey'] = apiKey
 
-        with open(self.secretsFile, 'x') as file:
-            json.dump(obj=secrets, fp=file, ensure_ascii=False, indent=4)
+        with open(self.secretsFile, 'wb') as file:
+            secrets = json.dumps(secrets)
+            secrets = base64.b64encode(secrets.encode())
+            file.write(secrets)
 
 
     def _createDatabaseFile(self) -> None:
