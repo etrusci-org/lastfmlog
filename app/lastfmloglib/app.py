@@ -321,8 +321,15 @@ class App:
             print(f'{totalPages - page} more {"pages" if totalPages - page > 1 else "page"} to fetch')
             time.sleep(self.conf['apiRequestPagingDelay'])
             self._fetchRecentTracks(page=page + 1, _addedTracks=_addedTracks)
-        else:
-            print(f'Added {_addedTracks} {"tracks" if _addedTracks == 0 or _addedTracks > 1 else "track"}')
+            return
+
+        # TODO:
+        # if --from 0
+        # cleanup tracks in local database that were deleted in the remote api
+        # - track fetched playHashes
+        # - check local database for playHashes that are not in fetched playHashes
+
+        print(f'Added {_addedTracks} {"tracks" if _addedTracks == 0 or _addedTracks > 1 else "track"}')
 
 
     def _fetchNowPlayingTrack(self) -> dict:
@@ -440,10 +447,10 @@ class App:
 
     def _fetchJSONAPIData(self, url: str) -> dict:
         try:
-            if not url.lower().startswith(self.conf['apiBaseURL']): # nosec B310
+            if not url.lower().startswith(self.conf['apiBaseURL']):
                 raise ValueError(f'Invalid API URL. Must start with: {self.conf["apiBaseURL"]}')
 
-            with urllib.request.urlopen(url) as response:
+            with urllib.request.urlopen(url) as response: # nosec B310
                 return json.load(response)
 
         except Exception as e:
