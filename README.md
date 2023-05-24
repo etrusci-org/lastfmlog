@@ -10,6 +10,7 @@ Command line tool that downloads your [Last.fm](https://last.fm) scrobbles (play
 - [Usage](#usage)
 - [Database File](#database-file)
 - [Statistics File](#statistics-file)
+- [Secrets File Security](#secrets-file-security)
 - [License](#license)
 
 ---
@@ -470,7 +471,7 @@ Example:
 
 ---
 
-## Secrets Security
+## Secrets File Security
 
 Please keep in mind that anyone who has access to your files on the system LastfmLog is installed, can decode and read your secrets file with just a little bit Python knowledge.
 
