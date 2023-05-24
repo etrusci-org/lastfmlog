@@ -473,7 +473,7 @@ Example:
 
 ## Secrets File Security
 
-Please keep in mind that anyone who has access to your files on the system LastfmLog is installed, can decode and read your secrets file with just a little bit Python knowledge.
+Please keep in mind that anyone who has access to the filesystem on which your data directory is stored, can decode and read your secrets file with little knowledge.
 
 ---
 
