@@ -1,456 +1,479 @@
 # LastfmLog
 
-Command line tool to download your [Last.fm](https://last.fm) scrobbles *(played tracks)* data into a local database so you can do stuff with it.
+Command line tool that downloads your [Last.fm](https://last.fm) scrobbles (played tracks) data into a local database so you can do something with it.
+
+![GitHub release (latest by date including pre-releases)](https://img.shields.io/github/v/release/etrusci-org/lastfmlog?include_prereleases&label=latest+release) ![GitHub issues](https://img.shields.io/github/issues/etrusci-org/lastfmlog) ![GitHub branch checks state](https://img.shields.io/github/checks-status/etrusci-org/lastfmlog/main?label=checks+main+branch) ![GitHub branch checks state](https://img.shields.io/github/checks-status/etrusci-org/lastfmlog/dev?label=checks+dev+branch) ![CodeFactor Grade](https://img.shields.io/codefactor/grade/github/etrusci-org/lastfmlog/main)
+
+- [Dependencies](#dependencies)
+- [Install](#install)
+- [First Time Setup](#first-time-setup)
+- [Usage](#usage)
+- [Database File](#database-file)
+- [Statistics File](#statistics-file)
+- [License](#license)
 
 ---
 
-## Requirements
+## Dependencies
 
-- [Python](https://python.org) >= 3.9.2
-- [Last.fm API account](https://www.last.fm/api/account/create)
-- Optionally: [SQLite](https://sqlite.org) >= 3.14.1 command-line or similiar tools if you want to further process the database file.
+- [Python](https://python.org) `>= 3.9.2`
+- [Last.fm API Account](https://www.last.fm/api/account/create)
 
 ---
 
-## Installing
+## Install
 
-1. Copy the `app/` directory to a location on your system where your user has read/write access.
-
-2. Copy `app/data/secrets.example.json` to `app/data/secrets.json` and open it in a text editor. Insert your Last.fm username as the `apiUser` value and your secret API key as the `apiKey` value. You can create your API credentials [here](https://www.last.fm/api/accounts).
-
-3. Optionally, make `app/cli.py` executable so you can run it directly:
-
-
-```bash
-cd app/            # change into the app/ directory
-chmod +x cli.py    # make the file executable
-./cli.py           # run it
+Copy the **lastfmlog/** directory to a location on your system where your user has read/write access.  
+You can rename the copied directory if you want.  
+You should end up with a directory structure like this:  
+```text
+lastfmlog/
+├─ app/
+│  ├─ data/           # default data directory
+│  ├─ lastfmloglib/   # program files
+│  ├─ cli.py          # command line interface
+LICENSE.md
+README.md
 ```
 
+Optionally, make **lastfmlog/app/cli.py** executable so you can run it directly:
+
+```text
+cd lastfmlog/app/    # change into the app/ directory
+chmod +x cli.py      # make the file executable
+./cli.py             # run it
+```
 Alternatively, you can use the Python 3 binary on your system to run it:
 
-```bash
-cd app/           # change into the app/ directory
-python3 cli.py    # run it
+```text
+cd lastfmlog/app/    # change into the app/ directory
+python3 cli.py       # run it
 ```
 
-Both methods work; it's up to you. For the sake of simplicity in the documentation, it will be referred to as `cli.py` from now on.
+Both methods work; it's up to you. For the sake of simplicity in the documentation, it will be referred to as **cli.py**.
+
+---
+
+## First Time Setup
+
+On the first run, you'll be asked for your API credentials. Here's how to get those:
+
+1. Register an user account for you [here](https://www.last.fm/join) .
+    - Username: this is the one you will enter in your secrets.
+    - Email: your email address
+2. Create an API account for LastfmLog [here](https://www.last.fm/api/account/create).
+    - Contact email: your email address
+    - Application name: whatever you want
+    - Application description: whatever you want
+    - Callback URL: leave empty
+    - Application homepage: leave empty
+
+Once you have created an API account, its data will be shown to you, or you can find it [here](https://www.last.fm/api/accounts) later. What you need is your **username** and **API key**.
+
+Once you have your API credentials, it is recommended to run the `whoami` action first, since this will also validate them right away.  
+Example:
+```text
+cli.py whoami
+
+Creating secrets file: /path/to/data/secrets.json
+
+No worries if you make mistakes, you can edit the file in a text editor.
+See the README on how to get an API key.
+
+Enter your Last.fm username: Scrobbler123
+Enter your Last.fm API key: ***
+
+Creating database file: /path/to/data/database.sqlite3
+
+      username: Scrobbler123
+ registered on: 2023-01-01 11:22:33 UTC
+         plays: 5907
+       artists: 1088
+        tracks: 3168
+        albums: 1291
+```
+
+All good if you see a quick overview of your account at the end. If not, check your API credentials again. You can either edit the secrets file in a text editor or delete it to getting asked again on the next run.
 
 ---
 
 ## Usage
 
-`cli.py Action [Options]...`
+Syntax: `cli.py Action [Options]...`
 
-**Action** is mandatory, while **options** are optional.
+- **Action** is mandatory, while **Options** are optional.  
+- Multiple options can be combined together.  
+- It does not matter if the action comes before or after the options.  
+- Not all actions support the same options.
 
-You can always use `--help` or `-h` for a quick overview of the available options. For more detailed explanations, please continue reading.
+Overview of available actions and options:
+
+- **whoami**
+  - `--datadir`
+- **nowplaying**
+  - `--datadir`
+  - `--json`
+- **update**
+  - `--datadir`
+  - `--from`
+  - `--to`
+  - `--verbose`
+- **reset**
+  - `--datadir`
+- **stats**
+  - `--datadir`
+  - `--limittopartists`
+  - `--limittoptracks`
+  - `--limittopalbums`
+  - `--limitplaysbyyear`
+  - `--limitplaysbymonth`
+  - `--limitplaysbyday`
+  - `--limitplaysbyhour`
 
 ### Actions
 
-Only one action can be executed at a time.
+#### whoami
+
+See who you are authenticated as. Useful for testing if your secrets are valid. Uses remote API data.  
+Example:
+```text
+cli.py whoami
+```
+
+#### nowplaying
+
+Show currently playing track. Uses remote API data.  
+Example:
+```text
+cli.py nowplaying
+```
 
 #### update
 
-Update the local database with data from the remote API. On the first run, all plays will be fetched. Afterward, only plays that are more recent than the last one stored in the local database will be fetched.  
+Update the local database with data from the remote API.  
 Example:
-```bash
+```text
 cli.py update
-# Fetching data page 1
-# + The Gentle People - Journey (DMX Krew remix)
-# + Insect Jazz - Wildflower
-# + Patchwork - Frequencies
-# Fetched 3 new tracks
-# Skipped 0 tracks
 ```
 
 #### stats
 
-Generate statistics from the data in the local database.  
+Generate statistics with data from the local database and save the output to a file.  
 Example:
-```bash
+```text
 cli.py stats
-# Stats saved to file: /home/user/lastfmlog/app/data/stats.json
 ```
 
 #### reset
 
-Delete everything in the local database.  
+Reset all database contents. Note that there will be no confirmation prompt.  
 Example:
-```bash
+```text
 cli.py reset
-# Reset database? [Y/n]: y
-# Deleted 5495 tracks
 ```
 
 ### Options
 
-Multiple options can be set at once.
+#### --help, -h
 
-#### (*global*) --datadir PATH
+Applies to action: *all*
 
-Override the default data directory path.  
-Default: `app/data/`  
-Example: `cli.py update --datadir /mnt/foo/mydatadir`
+Show an overview of the available actions and options.  
+Example:
+```text
+cli.py --help
+cli.py -h
+```
 
-#### (*update*) --from UNIXTIME
+#### --datadir PATH
 
-Only fetch plays after this time.  
-Default: *incremental update*  
-Example: `cli.py update --from 1684443099`
+Applies to action: *all*
 
-#### (*update*) --to UNIXTIME
+Override the default data directory path. You must create it first. It will not be created just by using this option. Each API account has its own data directory. Therefore you can switch between multiple users/accounts by using this option.  
+Example:
+```text
+cli.py whoami --datadir /tmp/batman
+cli.py whoami --datadir /tmp/joker
+```
 
-Only fetch plays before this time.  
-Default: *incremental update*  
-Example: `cli.py update --to 1684443099`
+#### --json
 
-#### (*stats*) --obsoleteafter SECONDS
+Applies to action: `nowplaying`
 
-Set the time in seconds until the database is considered obsolete, and you will be asked if you want to update it first. Set to `-1` to disable this check.  
-Default: `1800`  
-Example: `cli.py stats --obsoleteafter 900`
+Show JSON instead of text output.  
+Example:
+```text
+cli.py nowplaying --json
+```
 
-#### (*stats*) --playsbyyearlimit NUMBER
+#### --from UNIXTIME
 
-Limit the number of items in *plays by year*.  
-Default: *unlimited*  
-Example: `cli.py stats --playsbyyearlimit 10`
+Applies to action: `update`
 
-#### (*stats*) --playsbymonthlimit NUMBER
+Only fetch plays after this time. Unixtime stamp must be in UTC.  
+Example:
+```text
+cli.py update --from 1684769072
+```
 
-Limit the number of items in *plays by month*.  
-Default: *unlimited*  
-Example: `cli.py stats --playsbymonthlimit 12`
+#### --to UNIXTIME
 
-#### (*stats*) --playsbydaylimit NUMBER
+Applies to action: `update`
 
-Limit the number of items in *plays by day*.  
-Default: *unlimited*  
-Example: `cli.py stats --playsbydaylimit 7`
+Only fetch plays before this time. Unixtime stamp must be in UTC.  
+Example:
+```text
+cli.py update 
+cli.py update --to 1684847504
+```
 
-#### (*stats*) --playsbyhourlimit NUMBER
+#### --verbose, -v
 
-Limit the number of items in *plays by hour*.  
-Default: *unlimited*  
-Example: `cli.py stats --playsbyhourlimit 24`
+Applies to action: `update`
 
-#### (*stats*) --topartistslimit NUMBER
+Show fetched tracks while updating.  
+Example:
+```text
+cli.py update --verbose
+cli.py update -v
+```
 
-Limit the number of items in *top artists*.  
-Default: *unlimited*  
-Example: `cli.py stats --topartistslimit 10`
+#### --limittopartists NUMBER
 
-#### (*stats*) --toptrackslimit NUMBER
+Applies to action: `stats`
 
-Limit the number of items in *top tracks*.  
-Default: *unlimited*  
-Example: `cli.py stats --toptrackslimit 10`
+Limit the number of items in top artists.  
+Example:
+```text
+cli.py stats --limittopartists 10
+```
 
-#### (*stats*) --topalbumslimit NUMBER
+#### --limittoptracks NUMBER
 
-Limit the number of items in *top albums*.  
-Default: *unlimited*  
-Example: `cli.py stats --topalbumslimit 10`
+Applies to action: `stats`
+
+Limit the number of items in top tracks.  
+Example:
+```text
+cli.py stats --limittoptracks 10
+```
+
+#### --limittopalbums NUMBER
+
+Applies to action: `stats`
+
+Limit the number of items in top albums.  
+Example:
+```text
+cli.py stats --limittopalbums 10
+```
+
+#### --limitplaysbyyear NUMBER
+
+Applies to action: `stats`
+
+Limit the number of items in plays by year.  
+Example:
+```text
+cli.py stats --limitplaysbyyear 5
+```
+
+#### --limitplaysbymonth NUMBER
+
+Applies to action: `stats`
+
+Limit the number of items in plays by month.  
+Example:
+```text
+cli.py stats --limitplaysbymonth 12
+```
+
+#### --limitplaysbyday NUMBER
+
+Applies to action: `stats`
+
+Limit the number of items in plays by day.  
+Example:
+```text
+cli.py stats --limitplaysbyday 30
+```
+
+#### --limitplaysbyhour NUMBER
+
+Applies to action: `stats`
+
+Limit the number of items in plays by hour.  
+Example:
+```text
+cli.py stats --limitplaysbyhour 24
+```
 
 ---
 
-## Example Data/Output
+## Database File
 
-The database file. Default path is `app/data/main.sqlite3`. For its schema see `query['dbSchema']` in `app/lib/query.py`.
+Default path: **lastfmlog/app/data/database.sqlite3**  
+Engine: [SQLite3](https://sqlite.org)  
+Schema:
+```sql
+CREATE TABLE IF NOT EXISTS trackslog (
+    playHash TEXT NOT NULL UNIQUE,
+    playTime INTEGER NOT NULL UNIQUE,
+    artist TEXT NOT NULL,
+    track TEXT NOT NULL,
+    album TEXT DEFAULT NULL,
+    PRIMARY KEY(playHash)
+);
 
-![Screenshot of main.sqlite3](./doc/database.png)
+CREATE INDEX indexPlayTime ON trackslog(playTime DESC);
+CREATE INDEX indexArtist ON trackslog(artist COLLATE NOCASE ASC);
+CREATE INDEX indexTrack ON trackslog(track COLLATE NOCASE ASC);
+CREATE INDEX indexAlbum ON trackslog(album COLLATE NOCASE ASC);
+```
 
-### app/data/stats.json
+**playTime** (UTC), **artist**, **track** and **album** come directly from the API.  
 
-The statistics file that will be created when you execute the `stats` action. Default path is `app/data/stats.json`.
+The **playHash** is is generated with the method `_getPlayHash()` in **lastfmlog/app/lastfmloglib/app.py**:  
+```python
+@staticmethod
+def _getPlayHash(track: dict) -> str:
+    raw = str(track['date']['uts'] + track['artist']['name'] + track['name'] + track['album']['#text']).lower()
+    return hashlib.sha256(raw.encode()).hexdigest()
+```
 
+---
+
+## Statistics File
+
+Default path: **lastfmlog/app/data/stats.json**  
+Format: [JSON](https://json.org)  
+Example:
 ```json
 {
-    "_statsUpdatedOn": 1684486257.8129718,
-    "_databaseUpdatedOn": 1684485095.1636245,
-    "_defaultQueryLimit": 5616,
-    "playsTotal": 5616,
-    "uniqueArtists": 1077,
-    "uniqueTracks": 3075,
-    "uniqueAlbums": 1274,
+    "_username": "Scrobbler123",
+    "_statsModifiedOn": 1684843128,
+    "_databaseModifiedOn": 1684843126,
+    "__localTimezoneOffset": 7200,
+    "totalPlays": 5988,
+    "uniqueArtists": 1089,
+    "uniqueTracks": 3194,
+    "uniqueAlbums": 1295,
     "topArtists": [
         {
-            "artist": "EtheReal Media™",
-            "plays": 400
+            "plays": 409,
+            "artist": "EtheReal Media™"
         },
         {
-            "artist": "Romeo Rucha",
-            "plays": 252
+            "plays": 252,
+            "artist": "Romeo Rucha"
         },
         {
-            "artist": "Spartalien",
-            "plays": 186
+            "plays": 208,
+            "artist": "Spartalien"
         },
-        {
-            "artist": "Yuki Kajiura",
-            "plays": 120
-        },
-        {
-            "artist": "DJ Shadow",
-            "plays": 91
-        },
-        {
-            "artist": "Infinity Frequencies",
-            "plays": 87
-        },
-        {
-            "artist": "The Timewriter",
-            "plays": 72
-        },
-        {
-            "artist": "Tool",
-            "plays": 66
-        },
-        {
-            "artist": "Nas",
-            "plays": 58
-        },
-        {
-            "artist": "j^p^n",
-            "plays": 51
-        }
+        //...
     ],
     "topTracks": [
         {
-            "track": "In Memory Of You",
+            "plays": 16,
             "artist": "Yuki Kajiura",
-            "plays": 16
+            "track": "In Memory Of You"
         },
         {
-            "track": "Dat's Cool",
+            "plays": 16,
             "artist": "DJ Unknown Face",
-            "plays": 16
+            "track": "Dat's Cool"
         },
         {
-            "track": "Searchin'",
+            "plays": 16,
             "artist": "Dead Calm",
-            "plays": 16
+            "track": "Searchin'"
         },
-        {
-            "track": "One & Only",
-            "artist": "PFM",
-            "plays": 15
-        },
-        {
-            "track": "Come On (Simon Templar Mix)",
-            "artist": "Ballistic Brothers",
-            "plays": 15
-        },
-        {
-            "track": "Time Zone",
-            "artist": "Space Link",
-            "plays": 14
-        },
-        {
-            "track": "Find Me",
-            "artist": "Skanna",
-            "plays": 14
-        },
-        {
-            "track": "Nu Birth of Cool",
-            "artist": "Omni Trio",
-            "plays": 14
-        },
-        {
-            "track": "The Lick",
-            "artist": "Earl Grey",
-            "plays": 14
-        },
-        {
-            "track": "Speechless Drum & Bass (K&D Session)",
-            "artist": "Count Basic",
-            "plays": 14
-        }
+        //...
     ],
     "topAlbums": [
         {
-            "album": "Conversions - A K&D Selection",
+            "plays": 161,
             "artist": "Various Artists",
-            "plays": 145
+            "album": "BIZCAS10: Ten Years of Business Casual"
         },
         {
-            "album": "Aesthetic Vibes",
+            "plays": 145,
             "artist": "Various Artists",
-            "plays": 141
+            "album": "Conversions - A K&D Selection"
         },
         {
-            "album": "Stay Calm",
-            "artist": "Romeo Rucha",
-            "plays": 126
-        },
-        {
-            "album": "We're Good",
-            "artist": "Romeo Rucha",
-            "plays": 126
-        },
-        {
-            "album": "BIZCAS10: Ten Years of Business Casual",
+            "plays": 141,
             "artist": "Various Artists",
-            "plays": 120
+            "album": "Aesthetic Vibes"
         },
-        {
-            "album": "Xen Cuts",
-            "artist": "Various Artists",
-            "plays": 117
-        },
-        {
-            "album": "One Minute Massacre Volume 3",
-            "artist": "Various Artists",
-            "plays": 95
-        },
-        {
-            "album": "Ｌａｔｅ Ｎｉｇｈｔ ＴＶ",
-            "artist": "EtheReal Media™",
-            "plays": 90
-        },
-        {
-            "album": "Space Night Vol. 5",
-            "artist": "Various Artists",
-            "plays": 88
-        },
-        {
-            "album": "Untold Stories",
-            "artist": "Spartalien",
-            "plays": 82
-        }
+        //...
     ],
     "playsByYear": [
         {
-            "year": "2023",
-            "plays": 5132
+            "plays": 5502,
+            "year": "2023"
         },
         {
-            "year": "2022",
-            "plays": 486
+            "plays": 486,
+            "year": "2022"
         }
     ],
     "playsByMonth": [
         {
-            "month": "2023-05",
-            "plays": 1466
+            "plays": 1836,
+            "month": "2023-05"
         },
         {
-            "month": "2023-04",
-            "plays": 1743
+            "plays": 1743,
+            "month": "2023-04"
         },
         {
-            "month": "2023-03",
-            "plays": 508
+            "plays": 508,
+            "month": "2023-03"
         },
-        {
-            "month": "2023-02",
-            "plays": 886
-        },
-        {
-            "month": "2023-01",
-            "plays": 529
-        },
-        {
-            "month": "2022-12",
-            "plays": 486
-        }
+        //...
     ],
     "playsByDay": [
         {
-            "day": "2023-05-19",
-            "plays": 2
+            "plays": 4,
+            "day": "2023-05-23"
         },
         {
-            "day": "2023-05-18",
-            "plays": 90
+            "plays": 119,
+            "day": "2023-05-22"
         },
         {
-            "day": "2023-05-17",
-            "plays": 84
+            "plays": 78,
+            "day": "2023-05-21"
         },
-        {
-            "day": "2023-05-16",
-            "plays": 68
-        },
-        {
-            "day": "2023-05-15",
-            "plays": 92
-        },
-        {
-            "day": "2023-05-14",
-            "plays": 136
-        },
-        {
-            "day": "2023-05-13",
-            "plays": 232
-        },
-        {
-            "day": "2023-05-12",
-            "plays": 62
-        },
-        {
-            "day": "2023-05-11",
-            "plays": 55
-        },
-        {
-            "day": "2023-05-10",
-            "plays": 69
-        }
+        //...
     ],
     "playsByHour": [
         {
-            "hour": "08",
-            "day": "2023-05-19",
-            "plays": 2
-        },
-        {
-            "hour": "22",
-            "day": "2023-05-18",
-            "plays": 10
-        },
-        {
-            "hour": "21",
-            "day": "2023-05-18",
-            "plays": 8
-        },
-        {
-            "hour": "20",
-            "day": "2023-05-18",
-            "plays": 11
-        },
-        {
-            "hour": "19",
-            "day": "2023-05-18",
-            "plays": 4
-        },
-        {
-            "hour": "15",
-            "day": "2023-05-18",
-            "plays": 6
-        },
-        {
-            "hour": "14",
-            "day": "2023-05-18",
-            "plays": 5
-        },
-        {
+            "plays": 4,
             "hour": "13",
-            "day": "2023-05-18",
-            "plays": 8
+            "day": "2023-05-23"
         },
         {
-            "hour": "12",
-            "day": "2023-05-18",
-            "plays": 12
+            "plays": 20,
+            "hour": "00",
+            "day": "2023-05-23"
         },
         {
-            "hour": "11",
-            "day": "2023-05-18",
-            "plays": 12
-        }
+            "plays": 11,
+            "hour": "23",
+            "day": "2023-05-22"
+        },
+        //...
     ]
 }
 ```
+
+---
+
+## License
+
+See [LICENSE](./LICENSE.md).
 
 ---
