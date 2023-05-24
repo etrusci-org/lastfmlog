@@ -321,8 +321,18 @@ class App:
             print(f'{totalPages - page} more {"pages" if totalPages - page > 1 else "page"} to fetch')
             time.sleep(self.conf['apiRequestPagingDelay'])
             self._fetchRecentTracks(page=page + 1, _addedTracks=_addedTracks)
-        else:
-            print(f'Added {_addedTracks} {"tracks" if _addedTracks == 0 or _addedTracks > 1 else "track"}')
+            return
+
+        print(f'Added {_addedTracks} {"tracks" if _addedTracks == 0 or _addedTracks > 1 else "track"}')
+
+
+    def _cleanDeletedTracks(self) -> None:
+        pass
+        # TODO:
+        # if --from 0
+        # cleanup tracks in local database that were deleted in the remote api
+        # - track fetched playHashes
+        # - check local database for playHashes that are not in fetched playHashes
 
 
     def _fetchNowPlayingTrack(self) -> dict:
@@ -370,20 +380,22 @@ class App:
 
     def _createSecretsFile(self) -> None:
         print(f'Creating secrets file: {self.secretsFile}')
-        print('See the README on how to get your API credentials.')
+        print('See the README on how to get your API credentials. <https://github.com/etrusci-org/lastfmlog#readme>', end='\n\n')
 
-        secrets = self.conf['secretsTemplate']
-        apiUser = input('Enter your Last.fm username: ').strip()
-        apiKey = input('Enter your Last.fm API key: ').strip()
+        while True:
+            apiUser = input('Enter your Last.fm username: ').strip()
+            apiKey = input('Enter your Last.fm API key: ').strip()
 
-        if apiUser:
-            secrets['apiUser'] = apiUser
+            if not apiUser or not apiKey:
+                print('You must enter both username and API key.')
+            else:
+                break
 
-        if apiKey:
-            secrets['apiKey'] = apiKey
+        print()
+
+        secrets = json.dumps({'apiUser': apiUser, 'apiKey': apiKey}, ensure_ascii=False, indent=4)
 
         with open(self.secretsFile, 'wb') as file:
-            secrets = json.dumps(secrets)
             secrets = base64.b64encode(secrets.encode())
             file.write(secrets)
 
@@ -400,6 +412,7 @@ class App:
             raise
         finally:
             con.close()
+            print()
 
 
     def _resetDatabase(self) -> None:
@@ -437,10 +450,10 @@ class App:
 
     def _fetchJSONAPIData(self, url: str) -> dict:
         try:
-            if not url.lower().startswith(self.conf['apiBaseURL']): # nosec B310
+            if not url.lower().startswith(self.conf['apiBaseURL']):
                 raise ValueError(f'Invalid API URL. Must start with: {self.conf["apiBaseURL"]}')
 
-            with urllib.request.urlopen(url) as response:
+            with urllib.request.urlopen(url) as response: # nosec B310
                 return json.load(response)
 
         except Exception as e:

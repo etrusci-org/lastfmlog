@@ -74,15 +74,15 @@ Once you have created an API account, its data will be shown to you, or you can 
 Once you have your API credentials, it is recommended to run the `whoami` action first, since this will also validate them right away.  
 Example:
 ```text
-cli.py whoami
-
-Creating secrets file: /path/to/data/secrets.dat
-See the README on how to get your API credentials.
+Creating secrets file: /path/to/lastfmlog/app/data/secrets.dat
+See the README on how to get your API credentials. <https://github.com/etrusci-org/lastfmlog#readme>
 
 Enter your Last.fm username: Scrobbler123
 Enter your Last.fm API key: ***
 
-Creating database file: /path/to/data/database.sqlite3
+Creating database file: /path/to/lastfmlog/app/data/database.sqlite3
+
+[lastfmlog whoami]
 
       username: Scrobbler123
  registered on: 2023-01-01 11:22:33 UTC
