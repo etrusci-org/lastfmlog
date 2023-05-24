@@ -323,13 +323,16 @@ class App:
             self._fetchRecentTracks(page=page + 1, _addedTracks=_addedTracks)
             return
 
+        print(f'Added {_addedTracks} {"tracks" if _addedTracks == 0 or _addedTracks > 1 else "track"}')
+
+
+    def _cleanDeletedTracks(self) -> None:
+        pass
         # TODO:
         # if --from 0
         # cleanup tracks in local database that were deleted in the remote api
         # - track fetched playHashes
         # - check local database for playHashes that are not in fetched playHashes
-
-        print(f'Added {_addedTracks} {"tracks" if _addedTracks == 0 or _addedTracks > 1 else "track"}')
 
 
     def _fetchNowPlayingTrack(self) -> dict:
