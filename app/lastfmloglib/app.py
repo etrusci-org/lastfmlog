@@ -370,20 +370,22 @@ class App:
 
     def _createSecretsFile(self) -> None:
         print(f'Creating secrets file: {self.secretsFile}')
-        print('See the README on how to get your API credentials.')
+        print('See the README on how to get your API credentials. <https://github.com/etrusci-org/lastfmlog#readme>', end='\n\n')
 
-        secrets = self.conf['secretsTemplate']
-        apiUser = input('Enter your Last.fm username: ').strip()
-        apiKey = input('Enter your Last.fm API key: ').strip()
+        while True:
+            apiUser = input('Enter your Last.fm username: ').strip()
+            apiKey = input('Enter your Last.fm API key: ').strip()
 
-        if apiUser:
-            secrets['apiUser'] = apiUser
+            if not apiUser or not apiKey:
+                print('You must enter both username and API key.')
+            else:
+                break
 
-        if apiKey:
-            secrets['apiKey'] = apiKey
+        print()
+
+        secrets = json.dumps({'apiUser': apiUser, 'apiKey': apiKey}, ensure_ascii=False, indent=4)
 
         with open(self.secretsFile, 'wb') as file:
-            secrets = json.dumps(secrets)
             secrets = base64.b64encode(secrets.encode())
             file.write(secrets)
 
@@ -400,6 +402,7 @@ class App:
             raise
         finally:
             con.close()
+            print()
 
 
     def _resetDatabase(self) -> None:

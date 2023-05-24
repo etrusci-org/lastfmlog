@@ -9,10 +9,10 @@ conf = {}
 conf['dataDir'] = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'data'))
 
 
-conf['secretsTemplate'] = {
-    'apiUser': 'YOUR_LASTFM_API_USERNAME_HERE',
-    'apiKey': 'YOUR_LASTFM_API_KEY_HERE'
-}
+# conf['secretsTemplate'] = {
+#     'apiUser': 'YOUR_LASTFM_API_USERNAME_HERE',
+#     'apiKey': 'YOUR_LASTFM_API_KEY_HERE'
+# }
 
 
 conf['apiBaseURL'] = 'https://ws.audioscrobbler.com/2.0/'
