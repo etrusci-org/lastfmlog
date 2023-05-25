@@ -95,19 +95,19 @@ class App:
     def update(self) -> None:
         con, cur = self.Database.connect()
 
-        # Find the last playTime value so we can set the from parameter in the API URL accordingly.
+        # Find the last playTime value so we can set the "from" and "to" parameter in the API URL accordingly.
         cur.execute('SELECT playTime FROM trackslog ORDER BY playTime DESC LIMIT 1;')
         dump = cur.fetchone()
         lastplayTime = dump[0] if dump else 0
 
         con.close()
 
-        # Set the from and to parameters for the API URL if it's not set by the user
-        if self.args["from"] == None:
-            self.args["from"] = lastplayTime if self.args['to'] == None else 0
+        # Set the "from" and "to" parameters for the API URL if it's not set by the user
+        if self.args['from'] == None:
+            self.args['from'] = lastplayTime if self.args['to'] == None else 0
 
-        if self.args["to"] == None:
-            self.args["to"] = ''
+        if self.args['to'] == None or self.args['from'] >= self.args['to']:
+            self.args['to'] = ''
 
         # Fetch tracks
         self._fetchRecentTracks()
@@ -324,15 +324,6 @@ class App:
             return
 
         print(f'Added {_addedTracks} {"tracks" if _addedTracks == 0 or _addedTracks > 1 else "track"}')
-
-
-    def _cleanDeletedTracks(self) -> None:
-        pass
-        # TODO:
-        # if --from 0
-        # cleanup tracks in local database that were deleted in the remote api
-        # - track fetched playHashes
-        # - check local database for playHashes that are not in fetched playHashes
 
 
     def _fetchNowPlayingTrack(self) -> dict:
