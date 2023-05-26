@@ -120,9 +120,13 @@ class App:
         self._createStatsFile()
 
 
-    def reset(self) -> None:
+    def resetDatabase(self) -> None:
         self._resetDatabase()
         self.Database.vacuum()
+
+
+    def resetSecrets(self) -> None:
+        self._resetSecrets()
 
 
     def _getStats(self) -> dict:
@@ -480,6 +484,12 @@ class App:
             print(f'Could not reset database: {e}')
         finally:
             con.close()
+
+
+    def _resetSecrets(self) -> None:
+        print('Deleting secrets file')
+        secretsFile = os.path.join(self.dataDir, 'secrets.dat')
+        os.unlink(secretsFile)
 
 
     def _printWhoami(self) -> None:

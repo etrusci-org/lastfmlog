@@ -38,8 +38,11 @@ def main():
     if cliargs['action'] == 'nowplaying':
         App.nowplaying()
 
-    if cliargs['action'] == 'reset':
-        App.reset()
+    if cliargs['action'] == 'resetdatabase':
+        App.resetDatabase()
+
+    if cliargs['action'] == 'resetsecrets':
+        App.resetSecrets()
 
 
 
