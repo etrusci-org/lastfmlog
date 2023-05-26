@@ -2,7 +2,7 @@
 
 Command line tool that downloads your [Last.fm](https://last.fm) scrobbles (played tracks) data into a local database so you can do something with it.
 
-![GitHub release (latest by date including pre-releases)](https://img.shields.io/github/v/release/etrusci-org/lastfmlog?include_prereleases&label=latest+release) ![GitHub issues](https://img.shields.io/github/issues/etrusci-org/lastfmlog)
+[![GitHub release (latest by date including pre-releases)](https://img.shields.io/github/v/release/etrusci-org/lastfmlog?include_prereleases&label=latest+release)](https://github.com/etrusci-org/lastfmlog/releases) [![GitHub issues](https://img.shields.io/github/issues/etrusci-org/lastfmlog)](https://github.com/etrusci-org/lastfmlog/issues)
 
 - [Dependencies](#dependencies)
 - [Install](#install)
@@ -117,7 +117,9 @@ Overview of available actions and options:
   - `--from`
   - `--to`
   - `--verbose`
-- **reset**
+- **resetdatabase**
+  - `--datadir`
+- **resetsecrets**
   - `--datadir`
 - **stats**
   - `--datadir`
@@ -163,12 +165,22 @@ Example:
 cli.py stats
 ```
 
-#### reset
+#### resetdatabase
 
-Reset all database contents. Note that there will be no confirmation prompt.  
+Reset all database contents. Note that there will be no confirmation prompt.
+Alternatively, you could manually delete the database file.  
 Example:
 ```text
-cli.py reset
+cli.py resetdatabase
+```
+
+#### resetsecrets
+
+Reset secrets. You will be asked to enter your API credentials again on the next run. Note that there will be no confirmation prompt.
+Alternatively, you could manually delete the secrets file.  
+Example:
+```text
+cli.py resetsecrets
 ```
 
 ### Options
@@ -332,7 +344,7 @@ CREATE INDEX indexAlbum ON trackslog(album COLLATE NOCASE ASC);
 
 **playTime** (UTC), **artist**, **track** and **album** come directly from the API.  
 
-The **playHash** is is generated with the method `_getPlayHash()` in **lastfmlog/app/lastfmloglib/app.py**:  
+The **playHash**, which is used to uniquely identify a play, is generated with the method `_getPlayHash()` in **lastfmlog/app/lastfmloglib/app.py**:  
 ```python
 @staticmethod
 def _getPlayHash(track: dict) -> str:
@@ -350,16 +362,40 @@ Example:
 ```json
 {
     "_username": "Scrobbler123",
-    "_statsModifiedOn": 1684843128,
-    "_databaseModifiedOn": 1684843126,
-    "__localTimezoneOffset": 7200,
-    "totalPlays": 5988,
-    "uniqueArtists": 1089,
-    "uniqueTracks": 3194,
-    "uniqueAlbums": 1295,
+    "_statsModifiedOn": 1685131799,
+    "_databaseModifiedOn": 1685130925,
+    "_localTimezoneOffset": 7200,
+    "playsTotal": 6238,
+    "plays7days": {
+        "plays": 563,
+        "average": 80
+    },
+    "plays14days": {
+        "plays": 1362,
+        "average": 97
+    },
+    "plays30days": {
+        "plays": 2281,
+        "average": 76
+    },
+    "plays90days": {
+        "plays": 4385,
+        "average": 48
+    },
+    "plays180days": {
+        "plays": 6238,
+        "average": 34
+    },
+    "plays365days": {
+        "plays": 6238,
+        "average": 17
+    },
+    "uniqueArtists": 1148,
+    "uniqueTracks": 3291,
+    "uniqueAlbums": 1355,
     "topArtists": [
         {
-            "plays": 409,
+            "plays": 438,
             "artist": "EtheReal Media™"
         },
         {
@@ -370,9 +406,14 @@ Example:
             "plays": 208,
             "artist": "Spartalien"
         },
-        //...
+        ...
     ],
     "topTracks": [
+        {
+            "plays": 17,
+            "artist": "EtheReal Media™",
+            "track": "Ｓｕｎｎｙ Ｓｋｉｅｓ"
+        },
         {
             "plays": 16,
             "artist": "Yuki Kajiura",
@@ -383,14 +424,14 @@ Example:
             "artist": "DJ Unknown Face",
             "track": "Dat's Cool"
         },
-        {
-            "plays": 16,
-            "artist": "Dead Calm",
-            "track": "Searchin'"
-        },
-        //...
+        ...
     ],
     "topAlbums": [
+        {
+            "plays": 174,
+            "artist": "Various Artists",
+            "album": "Aesthetic Vibes"
+        },
         {
             "plays": 161,
             "artist": "Various Artists",
@@ -401,26 +442,22 @@ Example:
             "artist": "Various Artists",
             "album": "Conversions - A K&D Selection"
         },
-        {
-            "plays": 141,
-            "artist": "Various Artists",
-            "album": "Aesthetic Vibes"
-        },
-        //...
+        ...
     ],
     "playsByYear": [
         {
-            "plays": 5502,
+            "plays": 5752,
             "year": "2023"
         },
         {
             "plays": 486,
             "year": "2022"
-        }
+        },
+        ...
     ],
     "playsByMonth": [
         {
-            "plays": 1836,
+            "plays": 2086,
             "month": "2023-05"
         },
         {
@@ -431,40 +468,37 @@ Example:
             "plays": 508,
             "month": "2023-03"
         },
-        //...
+        ...
     ],
     "playsByDay": [
         {
-            "plays": 4,
-            "day": "2023-05-23"
+            "plays": 62,
+            "day": "2023-05-26"
         },
         {
-            "plays": 119,
-            "day": "2023-05-22"
+            "plays": 91,
+            "day": "2023-05-25"
         },
         {
-            "plays": 78,
-            "day": "2023-05-21"
+            "plays": 30,
+            "day": "2023-05-24"
         },
-        //...
+        ...
     ],
     "playsByHour": [
         {
-            "plays": 4,
-            "hour": "13",
-            "day": "2023-05-23"
+            "plays": 1,
+            "hour": "2023-05-26 19"
         },
         {
-            "plays": 20,
-            "hour": "00",
-            "day": "2023-05-23"
+            "plays": 9,
+            "hour": "2023-05-26 18"
         },
         {
-            "plays": 11,
-            "hour": "23",
-            "day": "2023-05-22"
+            "plays": 19,
+            "hour": "2023-05-26 17"
         },
-        //...
+        ...
     ]
 }
 ```
