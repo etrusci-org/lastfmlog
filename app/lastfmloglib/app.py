@@ -311,12 +311,13 @@ class App:
 
 
     def _createStatsFile(self) -> None:
+        print(f'Creating stats file')
+
         stats = self._getStats()
         statsFile = os.path.join(self.dataDir, 'stats.json')
 
         with open(statsFile, mode='w') as file:
             file.write(json.dumps(stats, ensure_ascii=False, indent=4))
-            print(f'Stats saved to file: {statsFile}')
 
 
     def _fetchRecentTracks(self, page: int = 1, _addedTracks: int = 0) -> None:
@@ -433,7 +434,7 @@ class App:
 
 
     def _createSecretsFile(self) -> None:
-        print(f'Creating secrets file: {self.secretsFile}')
+        print(f'Creating secrets file')
         print('See the README on how to get your API credentials. <https://github.com/etrusci-org/lastfmlog#readme>', end='\n\n')
 
         while True:
@@ -455,7 +456,7 @@ class App:
 
 
     def _createDatabaseFile(self) -> None:
-        print(f'Creating database file: {self.databaseFile}')
+        print(f'Creating database file')
 
         con, cur = self.Database.connect()
 
