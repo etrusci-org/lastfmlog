@@ -134,7 +134,13 @@ class App:
             '_statsModifiedOn': int(time.time()),
             '_databaseModifiedOn': int(os.path.getmtime(self.databaseFile)),
             '_localTimezoneOffset': self.localTimezoneOffset,
-            'totalPlays': 0,
+            'playsTotal': 0,
+            'plays7days': 0,
+            'plays14days': 0,
+            'plays30days': 0,
+            'plays90days': 0,
+            'plays180days': 0,
+            'plays365days': 0,
             'uniqueArtists': 0,
             'uniqueTracks': 0,
             'uniqueAlbums': 0,
@@ -148,8 +154,68 @@ class App:
         }
 
         # Total plays
-        cur.execute(databaseQuery['totalPlays'])
-        stats['totalPlays'] = cur.fetchone()[0]
+        cur.execute(databaseQuery['playsTotal'])
+        stats['playsTotal'] = cur.fetchone()[0]
+
+        # Plays 7 days
+        cur.execute('SELECT COUNT(playHash) FROM trackslog WHERE playTime >= :time ORDER BY playTime DESC;', {
+            'time': int(time.time() - (86400 * 7)),
+        })
+        plays = cur.fetchone()[0]
+        stats['plays7days'] = {
+            'plays': plays,
+            'average': int(plays / 7)
+        }
+
+        # Plays 14 days
+        cur.execute('SELECT COUNT(playHash) FROM trackslog WHERE playTime >= :time ORDER BY playTime DESC;', {
+            'time': int(time.time() - (86400 * 14)),
+        })
+        plays = cur.fetchone()[0]
+        stats['plays14days'] = {
+            'plays': plays,
+            'average': int(plays / 14)
+        }
+
+        # Plays 30 days
+        cur.execute('SELECT COUNT(playHash) FROM trackslog WHERE playTime >= :time ORDER BY playTime DESC;', {
+            'time': int(time.time() - (86400 * 30)),
+        })
+        plays = cur.fetchone()[0]
+        stats['plays30days'] = {
+            'plays': plays,
+            'average': int(plays / 30)
+        }
+
+        # Plays 90 days
+        cur.execute('SELECT COUNT(playHash) FROM trackslog WHERE playTime >= :time ORDER BY playTime DESC;', {
+            'time': int(time.time() - (86400 * 90)),
+        })
+        plays = cur.fetchone()[0]
+        stats['plays90days'] = {
+            'plays': plays,
+            'average': int(plays / 90)
+        }
+
+        # Plays 180 days
+        cur.execute('SELECT COUNT(playHash) FROM trackslog WHERE playTime >= :time ORDER BY playTime DESC;', {
+            'time': int(time.time() - (86400 * 180)),
+        })
+        plays = cur.fetchone()[0]
+        stats['plays180days'] = {
+            'plays': plays,
+            'average': int(plays / 180)
+        }
+
+        # Plays 365 days
+        cur.execute('SELECT COUNT(playHash) FROM trackslog WHERE playTime >= :time ORDER BY playTime DESC;', {
+            'time': int(time.time() - (86400 * 365)),
+        })
+        plays = cur.fetchone()[0]
+        stats['plays365days'] = {
+            'plays': plays,
+            'average': int(plays / 365)
+        }
 
         # Unique artists
         cur.execute(databaseQuery['uniqueArtists'])
@@ -197,7 +263,7 @@ class App:
 
         # Plays by year
         cur.execute(databaseQuery['playsByYear'], {
-            'limit': self.args['limitplaysbyyear'] if self.args['limitplaysbyyear'] else stats['totalPlays'],
+            'limit': self.args['limitplaysbyyear'] if self.args['limitplaysbyyear'] else stats['playsTotal'],
         })
         for row in cur:
             stats['playsByYear'].append({
@@ -207,7 +273,7 @@ class App:
 
         # Plays by month
         cur.execute(databaseQuery['playsByMonth'], {
-            'limit': self.args['limitplaysbymonth'] if self.args['limitplaysbymonth'] else stats['totalPlays'],
+            'limit': self.args['limitplaysbymonth'] if self.args['limitplaysbymonth'] else stats['playsTotal'],
         })
         for row in cur:
             month = self._convertDatetimeStringToLocalTimezone(f'{row[0]}-01 00:00:00')[0:7]
@@ -218,7 +284,7 @@ class App:
 
         # Plays by day
         cur.execute(databaseQuery['playsByDay'], {
-            'limit': self.args['limitplaysbyday'] if self.args['limitplaysbyday'] else stats['totalPlays'],
+            'limit': self.args['limitplaysbyday'] if self.args['limitplaysbyday'] else stats['playsTotal'],
         })
         for row in cur:
             day = self._convertDatetimeStringToLocalTimezone(f'{row[0]} 00:00:00')[0:10]
@@ -229,16 +295,13 @@ class App:
 
         # Plays by hour
         cur.execute(databaseQuery['playsByHour'], {
-            'limit': self.args['limitplaysbyhour'] if self.args['limitplaysbyhour'] else stats['totalPlays'],
+            'limit': self.args['limitplaysbyhour'] if self.args['limitplaysbyhour'] else stats['playsTotal'],
         })
         for row in cur:
-            dump = self._convertDatetimeStringToLocalTimezone(f'{row[0]}:00:00')
-            hour = dump[11:13]
-            day = dump[0:10]
+            hour = self._convertDatetimeStringToLocalTimezone(f'{row[0]}:00:00')
             stats['playsByHour'].append({
                 'plays': row[1],
-                'hour': hour,
-                'day': day,
+                'hour': hour[0:13],
             })
 
         # Don't need the database anymore
@@ -455,3 +518,13 @@ class App:
     def _getPlayHash(track: dict) -> str:
         raw = str(track['date']['uts'] + track['artist']['name'] + track['name'] + track['album']['#text']).lower()
         return hashlib.sha256(raw.encode()).hexdigest()
+
+
+    # TODO: clean local database method
+    #
+    # Cleans tracks in local database which are not existing in the remote API data anymore
+    #
+    # 1. get all remote tracks list
+    # 2. get all local tracks list
+    # 3. delete all local tracks that are not in the remote tracks list
+    # 4. profit?

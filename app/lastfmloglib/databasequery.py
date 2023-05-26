@@ -26,7 +26,7 @@ COMMIT;
 '''
 
 # Total plays
-databaseQuery['totalPlays'] = '''
+databaseQuery['playsTotal'] = '''
 SELECT COUNT(playHash)
 FROM trackslog;
 '''
