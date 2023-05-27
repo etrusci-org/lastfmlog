@@ -454,9 +454,9 @@ class App:
         print()
 
         secrets = json.dumps({'apiUser': apiUser, 'apiKey': apiKey}, ensure_ascii=False, indent=4)
+        secrets = base64.b64encode(secrets.encode())
 
         with open(self.secretsFile, 'wb') as file:
-            secrets = base64.b64encode(secrets.encode())
             file.write(secrets)
 
 
