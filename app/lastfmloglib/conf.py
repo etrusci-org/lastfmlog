@@ -3,6 +3,7 @@ import os
 from .argtypes import cliparserArgTypeQueryLimit
 from .argtypes import cliparserArgTypeFrom
 from .argtypes import cliparserArgTypeTo
+from .argtypes import cliparserArgTypeExistingDirectoryPath
 
 
 
@@ -48,7 +49,7 @@ conf['cliparser'] = {
         {
             'arg': '--datadir',
             'metavar': 'PATH',
-            'type': str,
+            'type': cliparserArgTypeExistingDirectoryPath,
             'required': False,
             'default': None,
             'help': f'Override default data directory path.',

@@ -1,3 +1,4 @@
+import os
 import argparse
 import time
 
@@ -21,5 +22,12 @@ def cliparserArgTypeFrom(number: int) -> int:
 def cliparserArgTypeTo(number: int) -> int:
     number = int(number)
     if number > time.time():
-        raise argparse.ArgumentTypeError(f'can not be in the future')
+        raise argparse.ArgumentTypeError('can not be in the future')
     return number
+
+
+def cliparserArgTypeExistingDirectoryPath(dirPath: str) -> str:
+    if not os.path.exists(dirPath) \
+    or not os.path.isdir(dirPath):
+        raise argparse.ArgumentTypeError('directory does not exist or path does not point to a direcotry')
+    return dirPath
