@@ -495,6 +495,7 @@ class App:
 
     def _printWhoami(self) -> None:
         whoami = self._getWhoami()
+        print(f'data directory: {self.dataDir}')
         print(f'      username: {whoami["user"]["name"]}')
         print(f' registered on: {datetime.datetime.utcfromtimestamp(int(whoami["user"]["registered"]["unixtime"]))} UTC')
         print(f'         plays: {whoami["user"]["playcount"]}')
