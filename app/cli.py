@@ -44,6 +44,9 @@ def main():
     if cliargs['action'] == 'resetsecrets':
         App.resetSecrets()
 
+    if cliargs['action'] == 'export':
+        App.export()
+
 
 
 

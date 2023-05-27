@@ -130,6 +130,18 @@ class App:
         self._resetSecrets()
 
 
+    def export(self, outputFormat: str = 'sql') -> None:
+        outputFile = os.path.join(self.dataDir, f'export.{outputFormat}')
+
+        con, _ = self.Database.connect()
+
+        with open(outputFile, 'w') as file:
+            for row in con.iterdump():
+                file.write(f'{row}\n')
+
+        con.close()
+
+
     def _getStats(self) -> dict:
         con, cur = self.Database.connect()
 

@@ -26,6 +26,7 @@ conf['cliparserActions'] = [
     'nowplaying',
     'update',
     'stats',
+    'export',
     'resetdatabase',
     'resetsecrets',
 ]
