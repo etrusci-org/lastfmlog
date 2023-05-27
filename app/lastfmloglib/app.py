@@ -5,6 +5,7 @@ import time
 import datetime
 import hashlib
 import base64
+import getpass
 
 from .database import DatabaseSQLite
 from .databaseschema import databaseSchema
@@ -443,7 +444,7 @@ class App:
 
         while True:
             apiUser = input('Enter your Last.fm username: ').strip()
-            apiKey = input('Enter your Last.fm API key: ').strip()
+            apiKey = getpass.getpass('Enter your Last.fm API key (input will be hidden): ').strip()
 
             if not apiUser or not apiKey:
                 print('You must enter both username and API key.')
