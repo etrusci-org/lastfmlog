@@ -8,10 +8,13 @@ Command line tool that downloads your [Last.fm](https://last.fm) scrobbles (play
 - [Install](#install)
 - [First Time Setup](#first-time-setup)
 - [Usage](#usage)
+  - [Actions](#actions)
+  - [Options](#options)
 - [Database File](#database-file)
+- [Secrets File](#secrets-file)
 - [Statistics File](#statistics-file)
-- [Secrets File Security](#secrets-file-security)
 - [License](#license)
+
 
 ---
 
@@ -74,22 +77,21 @@ Once you have created an API account, its data will be shown to you, or you can 
 Once you have your API credentials, it is recommended to run the `whoami` action first, since this will also validate them right away.  
 Example:
 ```text
-Creating secrets file: /path/to/lastfmlog/app/data/secrets.dat
+Creating secrets file
 See the README on how to get your API credentials. <https://github.com/etrusci-org/lastfmlog#readme>
 
 Enter your Last.fm username: Scrobbler123
-Enter your Last.fm API key: ***
-
-Creating database file: /path/to/lastfmlog/app/data/database.sqlite3
+Enter your Last.fm API key (input will be hidden):
 
 [lastfmlog whoami]
 
+data directory: /path/to/lastfmlog/app/data
       username: Scrobbler123
- registered on: 2023-01-01 11:22:33 UTC
-         plays: 5907
-       artists: 1088
-        tracks: 3168
-        albums: 1291
+ registered on: 2022-11-03 11:46:00 UTC
+         plays: 6288
+       artists: 1148
+        tracks: 3291
+        albums: 1355
 ```
 
 All good if you see a quick overview of your account at the end. If not, check your API credentials and delete the secrets file to getting asked again on the next run.
@@ -98,14 +100,14 @@ All good if you see a quick overview of your account at the end. If not, check y
 
 ## Usage
 
-Syntax: `cli.py Action [Options]...`
+Syntax: `cli.py Action [Options ...]`
 
 - **Action** is mandatory, while **Options** are optional.  
 - Multiple options can be combined together.  
 - It does not matter if the action comes before or after the options.  
 - Not all actions support the same options.
 
-Overview of available actions and options:
+Overview of available actions and the options they support:
 
 - **whoami**
   - `--datadir`
@@ -117,10 +119,6 @@ Overview of available actions and options:
   - `--from`
   - `--to`
   - `--verbose`
-- **resetdatabase**
-  - `--datadir`
-- **resetsecrets**
-  - `--datadir`
 - **stats**
   - `--datadir`
   - `--limittopartists`
@@ -130,6 +128,12 @@ Overview of available actions and options:
   - `--limitplaysbymonth`
   - `--limitplaysbyday`
   - `--limitplaysbyhour`
+- **export**
+  - `--datadir`
+- **resetdatabase**
+  - `--datadir`
+- **resetsecrets**
+  - `--datadir`
 
 ### Actions
 
@@ -163,6 +167,14 @@ Generate statistics with data from the local database and save the output to a f
 Example:
 ```text
 cli.py stats
+```
+
+### export
+
+Dump the database as SQL source code to a file.  
+Example:
+```text
+cli.py export
 ```
 
 #### resetdatabase
@@ -354,6 +366,15 @@ def _getPlayHash(track: dict) -> str:
 
 ---
 
+## Secrets File
+
+Default path: **lastfmlog/app/data/secrets.dat**  
+Format: [JSON](https://json.org) encoded with [Base64](https://en.wikipedia.org/wiki/Base64).
+
+Please keep in mind that anyone who has read-access to the filesystem on which your data directory is stored, can decode and read your secrets file with little knowledge. Therefore, if you put this on a webserver, you must have the data directory outside of the public document root.
+
+---
+
 ## Statistics File
 
 Default path: **lastfmlog/app/data/stats.json**  
@@ -361,33 +382,33 @@ Format: [JSON](https://json.org)
 Example:
 ```json
 {
-    "_username": "Scrobbler123",
-    "_statsModifiedOn": 1685131799,
-    "_databaseModifiedOn": 1685130925,
+    "_username": "SPARTALIEN",
+    "_statsModifiedOn": 1685187850,
+    "_databaseModifiedOn": 1685187386,
     "_localTimezoneOffset": 7200,
-    "playsTotal": 6238,
+    "playsTotal": 6287,
     "plays7days": {
-        "plays": 563,
-        "average": 80
+        "plays": 598,
+        "average": 85
     },
     "plays14days": {
-        "plays": 1362,
-        "average": 97
+        "plays": 1326,
+        "average": 94
     },
     "plays30days": {
-        "plays": 2281,
-        "average": 76
+        "plays": 2327,
+        "average": 77
     },
     "plays90days": {
-        "plays": 4385,
-        "average": 48
+        "plays": 4424,
+        "average": 49
     },
     "plays180days": {
-        "plays": 6238,
+        "plays": 6287,
         "average": 34
     },
     "plays365days": {
-        "plays": 6238,
+        "plays": 6287,
         "average": 17
     },
     "uniqueArtists": 1148,
@@ -395,7 +416,7 @@ Example:
     "uniqueAlbums": 1355,
     "topArtists": [
         {
-            "plays": 438,
+            "plays": 459,
             "artist": "EtheReal Media™"
         },
         {
@@ -403,7 +424,7 @@ Example:
             "artist": "Romeo Rucha"
         },
         {
-            "plays": 208,
+            "plays": 209,
             "artist": "Spartalien"
         },
         ...
@@ -446,18 +467,17 @@ Example:
     ],
     "playsByYear": [
         {
-            "plays": 5752,
+            "plays": 5801,
             "year": "2023"
         },
         {
             "plays": 486,
             "year": "2022"
-        },
-        ...
+        }
     ],
     "playsByMonth": [
         {
-            "plays": 2086,
+            "plays": 2135,
             "month": "2023-05"
         },
         {
@@ -472,42 +492,36 @@ Example:
     ],
     "playsByDay": [
         {
-            "plays": 62,
+            "plays": 27,
+            "day": "2023-05-27"
+        },
+        {
+            "plays": 84,
             "day": "2023-05-26"
         },
         {
             "plays": 91,
             "day": "2023-05-25"
         },
-        {
-            "plays": 30,
-            "day": "2023-05-24"
-        },
         ...
     ],
     "playsByHour": [
         {
             "plays": 1,
-            "hour": "2023-05-26 19"
+            "hour": "2023-05-27 13"
         },
         {
             "plays": 9,
-            "hour": "2023-05-26 18"
+            "hour": "2023-05-27 12"
         },
         {
-            "plays": 19,
-            "hour": "2023-05-26 17"
+            "plays": 11,
+            "hour": "2023-05-27 11"
         },
         ...
     ]
 }
 ```
-
----
-
-## Secrets File Security
-
-Please keep in mind that anyone who has access to the filesystem on which your data directory is stored, can decode and read your secrets file with little knowledge.
 
 ---
 
