@@ -1,5 +1,9 @@
 import os
 
+from .argtypes import cliparserArgTypeQueryLimit
+from .argtypes import cliparserArgTypeFrom
+from .argtypes import cliparserArgTypeTo
+
 
 
 
@@ -60,7 +64,7 @@ conf['cliparser'] = {
         {
             'arg': '--from',
             'metavar': 'UNIXTIME',
-            'type': int,
+            'type': cliparserArgTypeFrom,
             'required': False,
             'default': None,
             'help': '[update] Only fetch plays after this time.',
@@ -68,7 +72,7 @@ conf['cliparser'] = {
         {
             'arg': '--to',
             'metavar': 'UNIXTIME',
-            'type': int,
+            'type': cliparserArgTypeTo,
             'required': False,
             'default': None,
             'help': '[update] Only fetch plays before this time.',
@@ -83,7 +87,7 @@ conf['cliparser'] = {
         {
             'arg': '--limittopartists',
             'metavar': 'NUMBER',
-            'type': int,
+            'type': cliparserArgTypeQueryLimit,
             'required': False,
             'default': None,
             'help': '[stats] Limit the number of items in top artists.',
@@ -91,7 +95,7 @@ conf['cliparser'] = {
         {
             'arg': '--limittoptracks',
             'metavar': 'NUMBER',
-            'type': int,
+            'type': cliparserArgTypeQueryLimit,
             'required': False,
             'default': None,
             'help': '[stats] Limit the number of items in top tracks.',
@@ -99,7 +103,7 @@ conf['cliparser'] = {
         {
             'arg': '--limittopalbums',
             'metavar': 'NUMBER',
-            'type': int,
+            'type': cliparserArgTypeQueryLimit,
             'required': False,
             'default': None,
             'help': '[stats] Limit the number of items in top albums.',
@@ -107,7 +111,7 @@ conf['cliparser'] = {
         {
             'arg': '--limitplaysbyyear',
             'metavar': 'NUMBER',
-            'type': int,
+            'type': cliparserArgTypeQueryLimit,
             'required': False,
             'default': None,
             'help': '[stats] Limit the number of items in plays by year.',
@@ -115,7 +119,7 @@ conf['cliparser'] = {
         {
             'arg': '--limitplaysbymonth',
             'metavar': 'NUMBER',
-            'type': int,
+            'type': cliparserArgTypeQueryLimit,
             'required': False,
             'default': None,
             'help': '[stats] Limit the number of items in plays by month.',
@@ -123,7 +127,7 @@ conf['cliparser'] = {
         {
             'arg': '--limitplaysbyday',
             'metavar': 'NUMBER',
-            'type': int,
+            'type': cliparserArgTypeQueryLimit,
             'required': False,
             'default': None,
             'help': '[stats] Limit the number of items in plays by day.',
@@ -131,7 +135,7 @@ conf['cliparser'] = {
         {
             'arg': '--limitplaysbyhour',
             'metavar': 'NUMBER',
-            'type': int,
+            'type': cliparserArgTypeQueryLimit,
             'required': False,
             'default': None,
             'help': '[stats] Limit the number of items in plays by hour.',
