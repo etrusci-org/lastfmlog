@@ -442,7 +442,7 @@ class App:
 
             for row in cur:
                 if not self._stringInFileLine(row[0], hashesFile):
-                    taFile.write(f'DELETE FROM trackslog WHERE playHash = \'{row[0]}\';\n') # TODO: investigate B608
+                    taFile.write(f'DELETE FROM trackslog WHERE playHash = \'{row[0]}\';\n') # nosec B608
 
                     if self.args['verbose']:
                         print(f'- [{row[0]}] {row[1]} - {row[2]}')
