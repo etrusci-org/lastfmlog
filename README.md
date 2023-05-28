@@ -2,7 +2,7 @@
 
 Command line tool that downloads your [Last.fm](https://last.fm) scrobbles (played tracks) data into a local database so you can do something with it.
 
-[![GitHub release (latest by date including pre-releases)](https://img.shields.io/github/v/release/etrusci-org/lastfmlog?include_prereleases&label=latest+release)](https://github.com/etrusci-org/lastfmlog/releases) [![GitHub issues](https://img.shields.io/github/issues/etrusci-org/lastfmlog)](https://github.com/etrusci-org/lastfmlog/issues)
+[![GitHub release (latest by date including pre-releases)](https://img.shields.io/github/v/release/etrusci-org/lastfmlog?include_prereleases&label=latest+release)](https://github.com/etrusci-org/lastfmlog/releases) [![GitHub issues](https://img.shields.io/github/issues/etrusci-org/lastfmlog)](https://github.com/etrusci-org/lastfmlog/issues) [![CodeFactor Grade](https://img.shields.io/codefactor/grade/github/etrusci-org/lastfmlog/main)](https://www.codefactor.io/repository/github/etrusci-org/lastfmlog)
 
 - [Dependencies](#dependencies)
 - [Install](#install)
@@ -14,7 +14,6 @@ Command line tool that downloads your [Last.fm](https://last.fm) scrobbles (play
 - [Secrets File](#secrets-file)
 - [Statistics File](#statistics-file)
 - [License](#license)
-
 
 ---
 
@@ -130,6 +129,9 @@ Overview of available actions and the options they support:
   - `--limitplaysbyhour`
 - **export**
   - `--datadir`
+- **trimdatabase**
+  - `--datadir`
+  - `--verbose`
 - **resetdatabase**
   - `--datadir`
 - **resetsecrets**
@@ -169,12 +171,20 @@ Example:
 cli.py stats
 ```
 
-### export
+#### export
 
 Dump the database as SQL source code to a file.  
 Example:
 ```text
 cli.py export
+```
+
+#### trimdatabase
+
+Delete tracks from the database which no longer exist in the remote data API.  
+Example:
+```text
+cli.py trimdatabase
 ```
 
 #### resetdatabase
@@ -197,7 +207,7 @@ cli.py resetsecrets
 
 ### Options
 
-#### --help, -h
+#### --help | -h
 
 Applies to action: *all*
 
@@ -250,15 +260,15 @@ cli.py update
 cli.py update --to 1684847504
 ```
 
-#### --verbose, -v
+#### --verbose | -v
 
-Applies to action: `update`
+Applies to actions: `update`, `trimdatabase`
 
-Show fetched tracks while updating.  
+Show more output.  
 Example:
 ```text
 cli.py update --verbose
-cli.py update -v
+cli.py trimdatabase -v
 ```
 
 #### --limittopartists NUMBER
@@ -368,7 +378,7 @@ def _getPlayHash(track: dict) -> str:
 
 ## Secrets File
 
-Default path: **lastfmlog/app/data/secrets.dat**  
+Default path: **lastfmlog/app/data/secrets.bin**  
 Format: [JSON](https://json.org) encoded with [Base64](https://en.wikipedia.org/wiki/Base64).
 
 Please keep in mind that anyone who has read-access to the filesystem on which your data directory is stored, can decode and read your secrets file with little knowledge. Therefore, if you put this on a webserver, you must have the data directory outside of the public document root.
@@ -382,7 +392,7 @@ Format: [JSON](https://json.org)
 Example:
 ```json
 {
-    "_username": "SPARTALIEN",
+    "_username": "Scrobbler123",
     "_statsModifiedOn": 1685187850,
     "_databaseModifiedOn": 1685187386,
     "_localTimezoneOffset": 7200,
