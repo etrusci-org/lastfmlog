@@ -1,5 +1,6 @@
 import os
 import json
+import typing
 import urllib.request
 import time
 import datetime
@@ -41,7 +42,7 @@ class App:
             self.dataDir = args['datadir']
 
         # Assume secrets file path
-        self.secretsFile = os.path.join(self.dataDir, 'secrets.dat')
+        self.secretsFile = os.path.join(self.dataDir, 'secrets.bin')
 
         # Assume database file path
         self.databaseFile = os.path.join(self.dataDir, 'database.sqlite3')
@@ -130,7 +131,12 @@ class App:
         self._resetSecrets()
 
 
-    def export(self, outputFormat: str = 'sql') -> None:
+    def export(self) -> None:
+        print('Creating export file')
+        self._createExportFile()
+
+
+    def _createExportFile(self, outputFormat: str = 'sql') -> None:
         outputFile = os.path.join(self.dataDir, f'export.{outputFormat}')
 
         con, _ = self.Database.connect()
@@ -328,7 +334,7 @@ class App:
 
 
     def _createStatsFile(self) -> None:
-        print(f'Creating stats file')
+        print('Creating stats file')
 
         stats = self._getStats()
         statsFile = os.path.join(self.dataDir, 'stats.json')
@@ -405,6 +411,88 @@ class App:
             return
 
         print(f'Added {_addedTracks} {"tracks" if _addedTracks == 0 or _addedTracks > 1 else "track"}')
+
+
+    def trimDatabase(self) -> None:
+        self._trimDatabase()
+
+
+    def _trimDatabase(self) -> None:
+        print('Trimming database')
+
+        # Get all remote tracks
+        trimhashesFile = os.path.join(self.dataDir, 'tmp-trimhashes.txt')
+        trimtaFile = os.path.join(self.dataDir, 'tmp-trimta.txt')
+
+        with open(trimhashesFile, 'w') as file:
+            for playHash in self._fetchRecentTracksAll():
+                file.write(f'{playHash}\n')
+
+        # Delete all local tracks that are not in the remote tracks list
+        con, cur = self.Database.connect()
+        cur.execute('SELECT playHash, artist, track FROM trackslog;')
+
+        with open(trimhashesFile, 'r') as hashesFile, open(trimtaFile, 'w+') as taFile:
+            taFile.write('BEGIN;\n')
+
+            for row in cur:
+                if not self._stringInFileLine(row[0], hashesFile):
+                    taFile.write(f'DELETE FROM trackslog WHERE playHash = \'{row[0]}\';\n')
+
+                    if self.args['verbose']:
+                        print(f'- [{row[0]}] {row[1]} - {row[2]}')
+
+            taFile.write('COMMIT;\n')
+            taFile.seek(0)
+            cur.executescript(taFile.read())
+
+        con.close()
+
+
+    def _fetchRecentTracksAll(self, page: int = 1, ) -> str:
+        # Bake API URL
+        apiURL = self.conf['apiBaseURL']
+        apiURL += '?method=user.getrecenttracks'
+        apiURL += '&format=json'
+        apiURL += '&extended=1'
+        apiURL += f'&limit={self.conf["apiRequestLimitInitial"]}'
+        apiURL += f'&from=0'
+        apiURL += f'&page={page}'
+        apiURL += f'&user={self.secrets["apiUser"]}'
+        apiURL += f'&api_key={self.secrets["apiKey"]}'
+
+        # Fetch API data from URL
+        print(f'Fetching API data page {page}')
+        apiData = self._fetchJSONAPIData(apiURL)
+
+        # Check if we got the stuff we need in apiData or stop
+        if not apiData.get('recenttracks'):
+            raise KeyError('Missing "recenttracks" key')
+
+        if not isinstance(apiData['recenttracks']['track'], list):
+            raise TypeError('Incorrect track list type')
+
+        # Calculate total pages
+        # The check for zero is necessary if the from parameter in the API URL is in the future
+        totalPages = int(apiData['recenttracks']['@attr']['totalPages'])
+        if totalPages <= 0:
+            totalPages = 1
+
+        # Yield fetched API data
+        for track in apiData['recenttracks']['track']:
+            # silently skip currently playing track
+            if not track.get('date'):
+                continue
+
+            playHash = self._getPlayHash(track)
+
+            yield playHash
+
+        # Fetch the next data page if there is one
+        if page < totalPages:
+            print(f'{totalPages - page} more {"pages" if totalPages - page > 1 else "page"} to fetch')
+            time.sleep(self.conf['apiRequestPagingDelay'])
+            yield from self._fetchRecentTracksAll(page=page + 1)
 
 
     def _fetchNowPlayingTrack(self) -> dict:
@@ -545,11 +633,12 @@ class App:
         return hashlib.sha256(raw.encode()).hexdigest()
 
 
-    # TODO: clean local database method
-    #
-    # Cleans tracks in local database which are not existing in the remote API data anymore
-    #
-    # 1. get all remote tracks list
-    # 2. get all local tracks list
-    # 3. delete all local tracks that are not in the remote tracks list
-    # 4. profit?
+    @staticmethod
+    def _stringInFileLine(string: str, file: typing.IO[str]) -> bool:
+        file.seek(0)
+
+        for line in file:
+            if string == line.strip():
+                return True
+
+        return False

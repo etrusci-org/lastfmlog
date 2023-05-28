@@ -38,6 +38,9 @@ def main():
     if cliargs['action'] == 'nowplaying':
         App.nowplaying()
 
+    if cliargs['action'] == 'trimdatabase':
+        App.trimDatabase()
+
     if cliargs['action'] == 'resetdatabase':
         App.resetDatabase()
 

@@ -27,6 +27,7 @@ conf['cliparserActions'] = [
     'update',
     'stats',
     'export',
+    'trimdatabase',
     'resetdatabase',
     'resetsecrets',
 ]
