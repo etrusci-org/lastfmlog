@@ -74,11 +74,36 @@ class App:
         # Database and secrets file are valid if we reach this line
 
 
-    def whoami(self) -> None:
-        self._printWhoami()
+    def executeAction(self, action: str) -> None:
+        if action not in self.conf['cliparserActions']:
+            raise ValueError(f'Invalid action')
+
+        if action == 'whoami':
+            self._printWhoami()
+
+        if action == 'update':
+            self._updateDatabase()
+
+        if action == 'stats':
+            self._createStatsFile()
+
+        if action == 'nowplaying':
+            self._printNowPlayingTrack()
+
+        if action == 'trimdatabase':
+            self._trimDatabase()
+
+        if action == 'resetdatabase':
+            self._resetDatabase()
+
+        if action == 'resetsecrets':
+            self._resetSecrets()
+
+        if action == 'export':
+            self._createExportFile()
 
 
-    def nowplaying(self) -> None:
+    def _printNowPlayingTrack(self) -> None:
         np = self._fetchNowPlayingTrack()
 
         if not self.args['json']:
@@ -94,7 +119,7 @@ class App:
             print(npJSON)
 
 
-    def update(self) -> None:
+    def _updateDatabase(self) -> None:
         con, cur = self.Database.connect()
 
         # Find the last playTime value so we can set the "from" and "to" parameter in the API URL accordingly.
@@ -118,25 +143,9 @@ class App:
         self.Database.vacuum()
 
 
-    def stats(self) -> None:
-        self._createStatsFile()
-
-
-    def resetDatabase(self) -> None:
-        self._resetDatabase()
-        self.Database.vacuum()
-
-
-    def resetSecrets(self) -> None:
-        self._resetSecrets()
-
-
-    def export(self) -> None:
-        print('Creating export file')
-        self._createExportFile()
-
-
     def _createExportFile(self, outputFormat: str = 'sql') -> None:
+        print('Creating export file')
+
         outputFile = os.path.join(self.dataDir, f'export.{outputFormat}')
 
         con, _ = self.Database.connect()
@@ -413,10 +422,6 @@ class App:
         print(f'Added {_addedTracks} {"tracks" if _addedTracks == 0 or _addedTracks > 1 else "track"}')
 
 
-    def trimDatabase(self) -> None:
-        self._trimDatabase()
-
-
     def _trimDatabase(self) -> None:
         print('Trimming database')
 
@@ -437,7 +442,7 @@ class App:
 
             for row in cur:
                 if not self._stringInFileLine(row[0], hashesFile):
-                    taFile.write(f'DELETE FROM trackslog WHERE playHash = \'{row[0]}\';\n')
+                    taFile.write(f'DELETE FROM trackslog WHERE playHash = \'{row[0]}\';\n') # TODO: investigate B608
 
                     if self.args['verbose']:
                         print(f'- [{row[0]}] {row[1]} - {row[2]}')
@@ -447,6 +452,8 @@ class App:
             cur.executescript(taFile.read())
 
         con.close()
+
+        self.Database.vacuum()
 
 
     def _fetchRecentTracksAll(self, page: int = 1, ) -> str:
@@ -576,21 +583,16 @@ class App:
 
 
     def _resetDatabase(self) -> None:
-        con, cur = self.Database.connect()
+        print('Deleting database file')
+        os.unlink(self.databaseFile)
 
-        try:
-            cur.executescript(databaseQuery['resetDatabase'])
-            print(f'Database reset')
-        except Exception as e:
-            print(f'Could not reset database: {e}')
-        finally:
-            con.close()
+        self._createDatabaseFile()
 
 
     def _resetSecrets(self) -> None:
         print('Deleting secrets file')
-        secretsFile = os.path.join(self.dataDir, 'secrets.dat')
-        os.unlink(secretsFile)
+        os.unlink(self.secretsFile)
+        self._createSecretsFile()
 
 
     def _printWhoami(self) -> None:

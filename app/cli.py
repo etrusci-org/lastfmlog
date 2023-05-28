@@ -26,29 +26,7 @@ def main():
     if not cliargs['json']:
         print(f'[lastfmlog {cliargs["action"]}]', end='\n\n')
 
-    if cliargs['action'] == 'whoami':
-        App.whoami()
-
-    if cliargs['action'] == 'update':
-        App.update()
-
-    if cliargs['action'] == 'stats':
-        App.stats()
-
-    if cliargs['action'] == 'nowplaying':
-        App.nowplaying()
-
-    if cliargs['action'] == 'trimdatabase':
-        App.trimDatabase()
-
-    if cliargs['action'] == 'resetdatabase':
-        App.resetDatabase()
-
-    if cliargs['action'] == 'resetsecrets':
-        App.resetSecrets()
-
-    if cliargs['action'] == 'export':
-        App.export()
+    App.executeAction(action=cliargs['action'])
 
 
 
