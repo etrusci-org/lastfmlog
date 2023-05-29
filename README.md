@@ -20,6 +20,7 @@ Command line tool that downloads your [Last.fm](https://last.fm) scrobbles (play
 ## Dependencies
 
 - [Python](https://python.org) `>= 3.9.2`
+- [Last.fm User Account](https://www.last.fm/join)
 - [Last.fm API Account](https://www.last.fm/api/account/create)
 
 ---
@@ -61,10 +62,10 @@ Both methods work; it's up to you. For the sake of simplicity in the documentati
 
 On the first run, you'll be asked for your API credentials. Here's how to get those:
 
-1. Register an user account for you [here](https://www.last.fm/join) .
+1. Register an user account [here](https://www.last.fm/join).
     - Username: this is the one you will enter in your secrets.
     - Email: your email address
-2. Create an API account for LastfmLog [here](https://www.last.fm/api/account/create).
+2. Register an API account [here](https://www.last.fm/api/account/create).
     - Contact email: your email address
     - Application name: whatever you want
     - Application description: whatever you want
@@ -117,7 +118,6 @@ Overview of available actions and the options they support:
   - `--datadir`
   - `--from`
   - `--to`
-  - `--verbose`
 - **stats**
   - `--datadir`
   - `--limittopartists`
@@ -131,7 +131,6 @@ Overview of available actions and the options they support:
   - `--datadir`
 - **trimdatabase**
   - `--datadir`
-  - `--verbose`
 - **resetdatabase**
   - `--datadir`
 - **resetsecrets**
@@ -258,17 +257,6 @@ Example:
 ```text
 cli.py update 
 cli.py update --to 1684847504
-```
-
-#### --verbose | -v
-
-Applies to actions: `update`, `trimdatabase`
-
-Show more output.  
-Example:
-```text
-cli.py update --verbose
-cli.py trimdatabase -v
 ```
 
 #### --limittopartists NUMBER

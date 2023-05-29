@@ -8,6 +8,7 @@ import hashlib
 import base64
 import getpass
 
+from .log import Logger
 from .database import DatabaseSQLite
 from .databaseschema import databaseSchema
 from .databasequery import databaseQuery
@@ -26,31 +27,33 @@ class App:
     databaseFile: str
     secrets: dict
 
+    Log: Logger
     Database: DatabaseSQLite
 
 
-    def __init__(self, conf: dict, args: dict) -> None:
+    def __init__(self, conf: dict, args: dict, Log: Logger) -> None:
         # 'member
         self.conf = conf
         self.args = args
+        self.Log = Log
         self.localTimezoneOffset = time.localtime().tm_gmtoff
 
         # Assume data directory path
-        if args['datadir'] == None:
+        if not args['datadir']:
             self.dataDir = self.conf['dataDir']
         else:
             self.dataDir = args['datadir']
 
         # Assume secrets file path
-        self.secretsFile = os.path.join(self.dataDir, 'secrets.bin')
+        self.secretsFile = os.path.join(self.dataDir, self.conf['secretsFilename'])
 
         # Assume database file path
-        self.databaseFile = os.path.join(self.dataDir, 'database.sqlite3')
+        self.databaseFile = os.path.join(self.dataDir, self.conf['databaseFilename'])
 
         # Init database object
         self.Database = DatabaseSQLite(dbFile=self.databaseFile)
 
-        # Check data dir path and stop the world from turning if it doesn exist
+        # Check data dir path and stop the world from turning if it does not exist
         if not os.path.isdir(self.dataDir):
             raise FileNotFoundError(f'Data directory not found: {self.dataDir}')
 
@@ -75,7 +78,7 @@ class App:
 
 
     def executeAction(self, action: str) -> None:
-        if action not in self.conf['cliparserActions']:
+        if action not in self.conf['actionArgs']:
             raise ValueError(f'Invalid action')
 
         if action == 'whoami':
@@ -103,35 +106,18 @@ class App:
             self._createExportFile()
 
 
-    def _printNowPlayingTrack(self) -> None:
-        np = self._fetchNowPlayingTrack()
-
-        if not self.args['json']:
-            if not np['artist']:
-                print('Silence')
-            else:
-                print(f'artist: {np["artist"]}')
-                print(f' track: {np["track"]}')
-                if np['album']:
-                    print(f' album: {np["album"]}')
-        else:
-            npJSON = json.dumps(np, ensure_ascii=False, indent=4)
-            print(npJSON)
-
-
     def _updateDatabase(self) -> None:
         con, cur = self.Database.connect()
 
         # Find the last playTime value so we can set the "from" and "to" parameter in the API URL accordingly.
         cur.execute('SELECT playTime FROM trackslog ORDER BY playTime DESC LIMIT 1;')
         dump = cur.fetchone()
-        lastplayTime = dump[0] if dump else 0
-
+        lastPlayTime = dump[0] if dump else 0
         con.close()
 
         # Set the "from" and "to" parameters for the API URL if it's not set by the user
         if self.args['from'] == None:
-            self.args['from'] = lastplayTime if self.args['to'] == None else 0
+            self.args['from'] = lastPlayTime if self.args['to'] == None else 0
 
         if self.args['to'] == None or self.args['from'] >= self.args['to']:
             self.args['to'] = ''
@@ -139,14 +125,11 @@ class App:
         # Fetch tracks
         self._fetchRecentTracks()
 
-        # Janitor
-        self.Database.vacuum()
 
+    def _createExportFile(self) -> None:
+        self.Log.msg('exporting database source code')
 
-    def _createExportFile(self, outputFormat: str = 'sql') -> None:
-        print('Creating export file')
-
-        outputFile = os.path.join(self.dataDir, f'export.{outputFormat}')
+        outputFile = os.path.join(self.dataDir, f'{self.conf["exportFilename"]}')
 
         con, _ = self.Database.connect()
 
@@ -155,6 +138,8 @@ class App:
                 file.write(f'{row}\n')
 
         con.close()
+
+        self.Log.msg(f'wrote {os.path.getsize(outputFile)} bytes to {self.conf["exportFilename"]}')
 
 
     def _getStats(self) -> dict:
@@ -343,22 +328,27 @@ class App:
 
 
     def _createStatsFile(self) -> None:
-        print('Creating stats file')
-
+        self.Log.msg('loading statistics data')
         stats = self._getStats()
-        statsFile = os.path.join(self.dataDir, 'stats.json')
+
+        statsFile = os.path.join(self.dataDir, self.conf['statsFilename'])
+        statsData = json.dumps(stats, ensure_ascii=False, indent=4)
 
         with open(statsFile, mode='w') as file:
-            file.write(json.dumps(stats, ensure_ascii=False, indent=4))
+            file.write(statsData)
+
+        self.Log.msg(f'wrote {os.path.getsize(statsFile)} bytes to {self.conf["statsFilename"]}')
 
 
     def _fetchRecentTracks(self, page: int = 1, _addedTracks: int = 0) -> None:
         # Bake API URL
+        limitParamValue = self.conf["apiRequestLimitInitial"] if self.args["from"] == 0 or time.time() - self.args["from"] > self.conf["apiRequestSwitchToInitialLimitTreshold"] else self.conf["apiRequestLimitIncremental"]
+
         apiURL = self.conf['apiBaseURL']
         apiURL += '?method=user.getrecenttracks'
         apiURL += '&format=json'
         apiURL += '&extended=1'
-        apiURL += f'&limit={self.conf["apiRequestLimitInitial"] if self.args["from"] == 0 or time.time() - self.args["from"] > self.conf["apiRequestSwitchToInitialLimitTreshold"] else self.conf["apiRequestLimitIncremental"]}'
+        apiURL += f'&limit={limitParamValue}'
         apiURL += f'&from={self.args["from"]}'
         apiURL += f'&to={self.args["to"]}'
         apiURL += f'&page={page}'
@@ -366,7 +356,10 @@ class App:
         apiURL += f'&api_key={self.secrets["apiKey"]}'
 
         # Fetch API data from URL
-        print(f'Fetching API data page {page}')
+        self.Log.msg(f'downloading page:{page}', end=' ' if page == 1 else '\n')
+        if page == 1:
+            self.Log.msg(f'from:{self.args["from"]} to:{self.args["to"] or "latest"} limit:{limitParamValue}')
+
         apiData = self._fetchJSONAPIData(apiURL)
 
         # Check if we got the stuff we need in apiData or stop
@@ -401,12 +394,9 @@ class App:
 
                 _addedTracks += 1
 
-                if self.args['verbose']:
-                    print(f'+ {track["artist"]["name"]} - {track["name"]}')
-
         except Exception as e:
             if str(e).lower().find('unique') == -1:
-                print(f'! {track["artist"]["name"]} - {track["name"]} | {e}')
+                self.Log.msg(f'! {track["artist"]["name"]} - {track["name"]} | {e}')
 
         finally:
             con.commit()
@@ -414,28 +404,34 @@ class App:
 
         # Fetch the next data page if there is one
         if page < totalPages:
-            print(f'{totalPages - page} more {"pages" if totalPages - page > 1 else "page"} to fetch')
+            self.Log.msg(f'{totalPages - page} more {"pages" if totalPages - page > 1 else "page"}')
             time.sleep(self.conf['apiRequestPagingDelay'])
             self._fetchRecentTracks(page=page + 1, _addedTracks=_addedTracks)
             return
 
-        print(f'Added {_addedTracks} {"tracks" if _addedTracks == 0 or _addedTracks > 1 else "track"}')
+        self.Log.msg(f'added {_addedTracks} {"tracks" if _addedTracks == 0 or _addedTracks > 1 else "track"}')
+        if _addedTracks > 0:
+            self.Database.vacuum()
 
 
     def _trimDatabase(self) -> None:
-        print('Trimming database')
-
         # Get all remote tracks
-        trimhashesFile = os.path.join(self.dataDir, 'tmp-trimhashes.txt')
-        trimtaFile = os.path.join(self.dataDir, 'tmp-trimta.txt')
+        self.Log.msg('loading remote tracks')
+
+        trimhashesFile = os.path.join(self.dataDir, 'tmp-trim-hashes.txt')
+        trimtaFile = os.path.join(self.dataDir, 'tmp-trim-transaction.txt')
 
         with open(trimhashesFile, 'w') as file:
             for playHash in self._fetchRecentTracksAll():
                 file.write(f'{playHash}\n')
 
         # Delete all local tracks that are not in the remote tracks list
+        self.Log.msg('baking transaction source code')
+
         con, cur = self.Database.connect()
         cur.execute('SELECT playHash, artist, track FROM trackslog;')
+
+        _trimmedTracks = 0
 
         with open(trimhashesFile, 'r') as hashesFile, open(trimtaFile, 'w+') as taFile:
             taFile.write('BEGIN;\n')
@@ -443,20 +439,22 @@ class App:
             for row in cur:
                 if not self._stringInFileLine(row[0], hashesFile):
                     taFile.write(f'DELETE FROM trackslog WHERE playHash = \'{row[0]}\';\n') # nosec B608
-
-                    if self.args['verbose']:
-                        print(f'- [{row[0]}] {row[1]} - {row[2]}')
+                    _trimmedTracks += 1
 
             taFile.write('COMMIT;\n')
+
+            self.Log.msg('trimming trackslog table')
             taFile.seek(0)
             cur.executescript(taFile.read())
 
         con.close()
 
-        self.Database.vacuum()
+        self.Log.msg(f'deleted {_trimmedTracks} {"tracks" if _trimmedTracks == 0 or _trimmedTracks > 1 else "track"}')
+        if _trimmedTracks > 0:
+            self.Database.vacuum()
 
 
-    def _fetchRecentTracksAll(self, page: int = 1, ) -> str:
+    def _fetchRecentTracksAll(self, page: int = 1) -> str:
         # Bake API URL
         apiURL = self.conf['apiBaseURL']
         apiURL += '?method=user.getrecenttracks'
@@ -469,7 +467,10 @@ class App:
         apiURL += f'&api_key={self.secrets["apiKey"]}'
 
         # Fetch API data from URL
-        print(f'Fetching API data page {page}')
+        self.Log.msg(f'downloading page:{page}', end=' ' if page == 1 else '\n')
+        if page == 1:
+            self.Log.msg(f'from:0 to:latest limit:{self.conf["apiRequestLimitInitial"]}')
+
         apiData = self._fetchJSONAPIData(apiURL)
 
         # Check if we got the stuff we need in apiData or stop
@@ -497,7 +498,7 @@ class App:
 
         # Fetch the next data page if there is one
         if page < totalPages:
-            print(f'{totalPages - page} more {"pages" if totalPages - page > 1 else "page"} to fetch')
+            self.Log.msg(f'{totalPages - page} more {"pages" if totalPages - page > 1 else "page"}')
             time.sleep(self.conf['apiRequestPagingDelay'])
             yield from self._fetchRecentTracksAll(page=page + 1)
 
@@ -545,20 +546,38 @@ class App:
         return np
 
 
+    def _printNowPlayingTrack(self) -> None:
+        np = self._fetchNowPlayingTrack()
+
+        if not self.args['json']:
+            if not np['artist']:
+                self.Log.msg('Silence')
+            else:
+                self.Log.msg(f'artist: {np["artist"]}')
+                self.Log.msg(f' track: {np["track"]}')
+                if np['album']:
+                    self.Log.msg(f' album: {np["album"]}')
+        else:
+            if not np['artist']:
+                np = {'silence': True}
+
+            np = json.dumps(np, ensure_ascii=False, indent=4)
+
+            self.Log.msg(np)
+
+
     def _createSecretsFile(self) -> None:
-        print(f'Creating secrets file')
-        print('See the README on how to get your API credentials. <https://github.com/etrusci-org/lastfmlog#readme>', end='\n\n')
+        self.Log.msg(f'creating secrets file')
+        self.Log.msg('see the README on how to get your API credentials. <https://github.com/etrusci-org/lastfmlog#readme>', end='\n\n')
 
         while True:
-            apiUser = input('Enter your Last.fm username: ').strip()
-            apiKey = getpass.getpass('Enter your Last.fm API key (input will be hidden): ').strip()
+            apiUser = input('enter your Last.fm username: ').strip()
+            apiKey = getpass.getpass('enter your Last.fm API key (input will be hidden): ').strip()
 
             if not apiUser or not apiKey:
-                print('You must enter both username and API key.')
+                self.Log.msg('! both username and API key are required')
             else:
                 break
-
-        print()
 
         secrets = json.dumps({'apiUser': apiUser, 'apiKey': apiKey}, ensure_ascii=False, indent=4)
         secrets = base64.b64encode(secrets.encode())
@@ -568,7 +587,7 @@ class App:
 
 
     def _createDatabaseFile(self) -> None:
-        print(f'Creating database file')
+        self.Log.msg(f'creating database file')
 
         con, cur = self.Database.connect()
 
@@ -579,31 +598,31 @@ class App:
             raise
         finally:
             con.close()
-            print()
 
 
     def _resetDatabase(self) -> None:
-        print('Deleting database file')
+        self.Log.msg('deleting database file')
         os.unlink(self.databaseFile)
 
         self._createDatabaseFile()
 
 
     def _resetSecrets(self) -> None:
-        print('Deleting secrets file')
+        self.Log.msg('deleting secrets file')
         os.unlink(self.secretsFile)
+
         self._createSecretsFile()
 
 
     def _printWhoami(self) -> None:
         whoami = self._getWhoami()
-        print(f'data directory: {self.dataDir}')
-        print(f'      username: {whoami["user"]["name"]}')
-        print(f' registered on: {datetime.datetime.utcfromtimestamp(int(whoami["user"]["registered"]["unixtime"]))} UTC')
-        print(f'         plays: {whoami["user"]["playcount"]}')
-        print(f'       artists: {whoami["user"]["artist_count"]}')
-        print(f'        tracks: {whoami["user"]["track_count"]}')
-        print(f'        albums: {whoami["user"]["album_count"]}')
+        self.Log.msg(f'      username: {whoami["user"]["name"]}')
+        self.Log.msg(f' registered on: {datetime.datetime.utcfromtimestamp(int(whoami["user"]["registered"]["unixtime"]))} UTC')
+        self.Log.msg(f'         plays: {whoami["user"]["playcount"]}')
+        self.Log.msg(f'       artists: {whoami["user"]["artist_count"]}')
+        self.Log.msg(f'        tracks: {whoami["user"]["track_count"]}')
+        self.Log.msg(f'        albums: {whoami["user"]["album_count"]}')
+        self.Log.msg(f'data directory: {self.dataDir}')
 
 
     def _getWhoami(self) -> dict:
@@ -631,7 +650,13 @@ class App:
 
     @staticmethod
     def _getPlayHash(track: dict) -> str:
-        raw = str(track['date']['uts'] + track['artist']['name'] + track['name'] + track['album']['#text']).lower()
+        raw = str(
+            track['date']['uts'] \
+            + track['artist']['name'] \
+            + track['name'] \
+            + track['album']['#text']
+        ).lower()
+
         return hashlib.sha256(raw.encode()).hexdigest()
 
 

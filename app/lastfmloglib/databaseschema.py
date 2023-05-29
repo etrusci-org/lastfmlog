@@ -1,6 +1,6 @@
 # Database schema (transaction)
 databaseSchema = '''
-BEGIN;
+BEGIN TRANSACTION;
 
 CREATE TABLE IF NOT EXISTS trackslog (
     playHash TEXT NOT NULL UNIQUE,

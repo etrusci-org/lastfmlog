@@ -20,7 +20,7 @@ VALUES (
 
 # Reset all tables (transaction)
 databaseQuery['resetDatabase'] = '''
-BEGIN;
+BEGIN TRANSACTION;
 DELETE FROM trackslog;
 COMMIT;
 '''

@@ -12,16 +12,20 @@ conf = {}
 
 
 conf['dataDir'] = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'data'))
+conf['secretsFilename'] = 'secrets.bin'
+conf['databaseFilename'] = 'database.sqlite3'
+conf['statsFilename'] = 'stats.json'
+conf['exportFilename'] = 'export.sql'
 
 
 conf['apiBaseURL'] = 'https://ws.audioscrobbler.com/2.0/'
 conf['apiRequestLimitInitial'] = 200
-conf['apiRequestLimitIncremental'] = 30
-conf['apiRequestSwitchToInitialLimitTreshold'] = 86400
+conf['apiRequestLimitIncremental'] = 20
+conf['apiRequestSwitchToInitialLimitTreshold'] = 86400 / 2
 conf['apiRequestPagingDelay'] = 7
 
 
-conf['cliparserActions'] = [
+conf['actionArgs'] = [
     'whoami',
     'nowplaying',
     'update',
@@ -39,13 +43,14 @@ conf['cliparser'] = {
         'description': 'For more detailed explanations, please see the README <https://github.com/etrusci-org/lastfmlog#readme>.',
         'epilog': 'Made by arT2 <etrusci.org>',
     },
+    # TODO: update help texts
     'args': [
         {
             'arg': 'action',
             'metavar': 'ACTION',
             'type': str,
-            'choices': conf['cliparserActions'],
-            'help': f'Execute an action. Choose from: {", ".join(conf["cliparserActions"])}',
+            'choices': conf['actionArgs'],
+            'help': f'Execute an action. Choose from: {", ".join(conf["actionArgs"])}',
         },
         # global options
         {
@@ -79,12 +84,6 @@ conf['cliparser'] = {
             'required': False,
             'default': None,
             'help': '[update] Only fetch plays before this time.',
-        },
-        {
-            'arg': ['-v', '--verbose'],
-            'action': 'store_true',
-            'required': False,
-            'help': f'[update] Show fetched tracks while updating.',
         },
         # stats options
         {
