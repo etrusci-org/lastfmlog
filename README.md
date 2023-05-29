@@ -2,15 +2,17 @@
 
 Command line tool that downloads your [Last.fm](https://last.fm) scrobbles (played tracks) data into a local database so you can do something with it.
 
-![GitHub release (latest by date including pre-releases)](https://img.shields.io/github/v/release/etrusci-org/lastfmlog?include_prereleases&label=latest+release) ![GitHub issues](https://img.shields.io/github/issues/etrusci-org/lastfmlog)
+[![GitHub release (latest by date including pre-releases)](https://img.shields.io/github/v/release/etrusci-org/lastfmlog?include_prereleases&label=latest+release)](https://github.com/etrusci-org/lastfmlog/releases) [![GitHub issues](https://img.shields.io/github/issues/etrusci-org/lastfmlog)](https://github.com/etrusci-org/lastfmlog/issues) [![CodeFactor Grade](https://img.shields.io/codefactor/grade/github/etrusci-org/lastfmlog/main)](https://www.codefactor.io/repository/github/etrusci-org/lastfmlog)
 
 - [Dependencies](#dependencies)
 - [Install](#install)
 - [First Time Setup](#first-time-setup)
 - [Usage](#usage)
+  - [Actions](#actions)
+  - [Options](#options)
 - [Database File](#database-file)
+- [Secrets File](#secrets-file)
 - [Statistics File](#statistics-file)
-- [Secrets File Security](#secrets-file-security)
 - [License](#license)
 
 ---
@@ -18,6 +20,7 @@ Command line tool that downloads your [Last.fm](https://last.fm) scrobbles (play
 ## Dependencies
 
 - [Python](https://python.org) `>= 3.9.2`
+- [Last.fm User Account](https://www.last.fm/join)
 - [Last.fm API Account](https://www.last.fm/api/account/create)
 
 ---
@@ -59,10 +62,10 @@ Both methods work; it's up to you. For the sake of simplicity in the documentati
 
 On the first run, you'll be asked for your API credentials. Here's how to get those:
 
-1. Register an user account for you [here](https://www.last.fm/join) .
+1. Register an user account [here](https://www.last.fm/join).
     - Username: this is the one you will enter in your secrets.
     - Email: your email address
-2. Create an API account for LastfmLog [here](https://www.last.fm/api/account/create).
+2. Register an API account [here](https://www.last.fm/api/account/create).
     - Contact email: your email address
     - Application name: whatever you want
     - Application description: whatever you want
@@ -74,22 +77,21 @@ Once you have created an API account, its data will be shown to you, or you can 
 Once you have your API credentials, it is recommended to run the `whoami` action first, since this will also validate them right away.  
 Example:
 ```text
-Creating secrets file: /path/to/lastfmlog/app/data/secrets.dat
+Creating secrets file
 See the README on how to get your API credentials. <https://github.com/etrusci-org/lastfmlog#readme>
 
 Enter your Last.fm username: Scrobbler123
-Enter your Last.fm API key: ***
-
-Creating database file: /path/to/lastfmlog/app/data/database.sqlite3
+Enter your Last.fm API key (input will be hidden):
 
 [lastfmlog whoami]
 
+data directory: /path/to/lastfmlog/app/data
       username: Scrobbler123
- registered on: 2023-01-01 11:22:33 UTC
-         plays: 5907
-       artists: 1088
-        tracks: 3168
-        albums: 1291
+ registered on: 2022-11-03 11:46:00 UTC
+         plays: 6288
+       artists: 1148
+        tracks: 3291
+        albums: 1355
 ```
 
 All good if you see a quick overview of your account at the end. If not, check your API credentials and delete the secrets file to getting asked again on the next run.
@@ -98,14 +100,14 @@ All good if you see a quick overview of your account at the end. If not, check y
 
 ## Usage
 
-Syntax: `cli.py Action [Options]...`
+Syntax: `cli.py Action [Options ...]`
 
 - **Action** is mandatory, while **Options** are optional.  
 - Multiple options can be combined together.  
 - It does not matter if the action comes before or after the options.  
 - Not all actions support the same options.
 
-Overview of available actions and options:
+Overview of available actions and the options they support:
 
 - **whoami**
   - `--datadir`
@@ -116,9 +118,6 @@ Overview of available actions and options:
   - `--datadir`
   - `--from`
   - `--to`
-  - `--verbose`
-- **reset**
-  - `--datadir`
 - **stats**
   - `--datadir`
   - `--limittopartists`
@@ -128,6 +127,14 @@ Overview of available actions and options:
   - `--limitplaysbymonth`
   - `--limitplaysbyday`
   - `--limitplaysbyhour`
+- **export**
+  - `--datadir`
+- **trimdatabase**
+  - `--datadir`
+- **resetdatabase**
+  - `--datadir`
+- **resetsecrets**
+  - `--datadir`
 
 ### Actions
 
@@ -163,17 +170,43 @@ Example:
 cli.py stats
 ```
 
-#### reset
+#### export
 
-Reset all database contents. Note that there will be no confirmation prompt.  
+Dump the database as SQL source code to a file.  
 Example:
 ```text
-cli.py reset
+cli.py export
+```
+
+#### trimdatabase
+
+Delete tracks from the database which no longer exist in the remote data API.  
+Example:
+```text
+cli.py trimdatabase
+```
+
+#### resetdatabase
+
+Reset all database contents. Note that there will be no confirmation prompt.
+Alternatively, you could manually delete the database file.  
+Example:
+```text
+cli.py resetdatabase
+```
+
+#### resetsecrets
+
+Reset secrets. You will be asked to enter your API credentials again on the next run. Note that there will be no confirmation prompt.
+Alternatively, you could manually delete the secrets file.  
+Example:
+```text
+cli.py resetsecrets
 ```
 
 ### Options
 
-#### --help, -h
+#### --help | -h
 
 Applies to action: *all*
 
@@ -224,17 +257,6 @@ Example:
 ```text
 cli.py update 
 cli.py update --to 1684847504
-```
-
-#### --verbose, -v
-
-Applies to action: `update`
-
-Show fetched tracks while updating.  
-Example:
-```text
-cli.py update --verbose
-cli.py update -v
 ```
 
 #### --limittopartists NUMBER
@@ -332,13 +354,22 @@ CREATE INDEX indexAlbum ON trackslog(album COLLATE NOCASE ASC);
 
 **playTime** (UTC), **artist**, **track** and **album** come directly from the API.  
 
-The **playHash** is is generated with the method `_getPlayHash()` in **lastfmlog/app/lastfmloglib/app.py**:  
+The **playHash**, which is used to uniquely identify a play, is generated with the method `_getPlayHash()` in **lastfmlog/app/lastfmloglib/app.py**:  
 ```python
 @staticmethod
 def _getPlayHash(track: dict) -> str:
     raw = str(track['date']['uts'] + track['artist']['name'] + track['name'] + track['album']['#text']).lower()
     return hashlib.sha256(raw.encode()).hexdigest()
 ```
+
+---
+
+## Secrets File
+
+Default path: **lastfmlog/app/data/secrets.bin**  
+Format: [JSON](https://json.org) encoded with [Base64](https://en.wikipedia.org/wiki/Base64).
+
+Please keep in mind that anyone who has read-access to the filesystem on which your data directory is stored, can decode and read your secrets file with little knowledge. Therefore, if you put this on a webserver, you must have the data directory outside of the public document root.
 
 ---
 
@@ -350,16 +381,40 @@ Example:
 ```json
 {
     "_username": "Scrobbler123",
-    "_statsModifiedOn": 1684843128,
-    "_databaseModifiedOn": 1684843126,
-    "__localTimezoneOffset": 7200,
-    "totalPlays": 5988,
-    "uniqueArtists": 1089,
-    "uniqueTracks": 3194,
-    "uniqueAlbums": 1295,
+    "_statsModifiedOn": 1685187850,
+    "_databaseModifiedOn": 1685187386,
+    "_localTimezoneOffset": 7200,
+    "playsTotal": 6287,
+    "plays7days": {
+        "plays": 598,
+        "average": 85
+    },
+    "plays14days": {
+        "plays": 1326,
+        "average": 94
+    },
+    "plays30days": {
+        "plays": 2327,
+        "average": 77
+    },
+    "plays90days": {
+        "plays": 4424,
+        "average": 49
+    },
+    "plays180days": {
+        "plays": 6287,
+        "average": 34
+    },
+    "plays365days": {
+        "plays": 6287,
+        "average": 17
+    },
+    "uniqueArtists": 1148,
+    "uniqueTracks": 3291,
+    "uniqueAlbums": 1355,
     "topArtists": [
         {
-            "plays": 409,
+            "plays": 459,
             "artist": "EtheReal Media™"
         },
         {
@@ -367,12 +422,17 @@ Example:
             "artist": "Romeo Rucha"
         },
         {
-            "plays": 208,
+            "plays": 209,
             "artist": "Spartalien"
         },
-        //...
+        ...
     ],
     "topTracks": [
+        {
+            "plays": 17,
+            "artist": "EtheReal Media™",
+            "track": "Ｓｕｎｎｙ Ｓｋｉｅｓ"
+        },
         {
             "plays": 16,
             "artist": "Yuki Kajiura",
@@ -383,14 +443,14 @@ Example:
             "artist": "DJ Unknown Face",
             "track": "Dat's Cool"
         },
-        {
-            "plays": 16,
-            "artist": "Dead Calm",
-            "track": "Searchin'"
-        },
-        //...
+        ...
     ],
     "topAlbums": [
+        {
+            "plays": 174,
+            "artist": "Various Artists",
+            "album": "Aesthetic Vibes"
+        },
         {
             "plays": 161,
             "artist": "Various Artists",
@@ -401,16 +461,11 @@ Example:
             "artist": "Various Artists",
             "album": "Conversions - A K&D Selection"
         },
-        {
-            "plays": 141,
-            "artist": "Various Artists",
-            "album": "Aesthetic Vibes"
-        },
-        //...
+        ...
     ],
     "playsByYear": [
         {
-            "plays": 5502,
+            "plays": 5801,
             "year": "2023"
         },
         {
@@ -420,7 +475,7 @@ Example:
     ],
     "playsByMonth": [
         {
-            "plays": 1836,
+            "plays": 2135,
             "month": "2023-05"
         },
         {
@@ -431,49 +486,40 @@ Example:
             "plays": 508,
             "month": "2023-03"
         },
-        //...
+        ...
     ],
     "playsByDay": [
         {
-            "plays": 4,
-            "day": "2023-05-23"
+            "plays": 27,
+            "day": "2023-05-27"
         },
         {
-            "plays": 119,
-            "day": "2023-05-22"
+            "plays": 84,
+            "day": "2023-05-26"
         },
         {
-            "plays": 78,
-            "day": "2023-05-21"
+            "plays": 91,
+            "day": "2023-05-25"
         },
-        //...
+        ...
     ],
     "playsByHour": [
         {
-            "plays": 4,
-            "hour": "13",
-            "day": "2023-05-23"
+            "plays": 1,
+            "hour": "2023-05-27 13"
         },
         {
-            "plays": 20,
-            "hour": "00",
-            "day": "2023-05-23"
+            "plays": 9,
+            "hour": "2023-05-27 12"
         },
         {
             "plays": 11,
-            "hour": "23",
-            "day": "2023-05-22"
+            "hour": "2023-05-27 11"
         },
-        //...
+        ...
     ]
 }
 ```
-
----
-
-## Secrets File Security
-
-Please keep in mind that anyone who has access to the filesystem on which your data directory is stored, can decode and read your secrets file with little knowledge.
 
 ---
 

@@ -1,5 +1,10 @@
 import os
 
+from .argtypes import cliparserArgTypeQueryLimit
+from .argtypes import cliparserArgTypeFrom
+from .argtypes import cliparserArgTypeTo
+from .argtypes import cliparserArgTypeExistingDirectoryPath
+
 
 
 
@@ -7,27 +12,28 @@ conf = {}
 
 
 conf['dataDir'] = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'data'))
-
-
-# conf['secretsTemplate'] = {
-#     'apiUser': 'YOUR_LASTFM_API_USERNAME_HERE',
-#     'apiKey': 'YOUR_LASTFM_API_KEY_HERE'
-# }
+conf['secretsFilename'] = 'secrets.bin'
+conf['databaseFilename'] = 'database.sqlite3'
+conf['statsFilename'] = 'stats.json'
+conf['exportFilename'] = 'export.sql'
 
 
 conf['apiBaseURL'] = 'https://ws.audioscrobbler.com/2.0/'
 conf['apiRequestLimitInitial'] = 200
-conf['apiRequestLimitIncremental'] = 30
-conf['apiRequestSwitchToInitialLimitTreshold'] = 86400
+conf['apiRequestLimitIncremental'] = 20
+conf['apiRequestSwitchToInitialLimitTreshold'] = 86400 / 2
 conf['apiRequestPagingDelay'] = 7
 
 
-conf['cliparserActions'] = [
+conf['actionArgs'] = [
     'whoami',
     'nowplaying',
     'update',
     'stats',
-    'reset',
+    'export',
+    'trimdatabase',
+    'resetdatabase',
+    'resetsecrets',
 ]
 
 
@@ -37,19 +43,20 @@ conf['cliparser'] = {
         'description': 'For more detailed explanations, please see the README <https://github.com/etrusci-org/lastfmlog#readme>.',
         'epilog': 'Made by arT2 <etrusci.org>',
     },
+    # TODO: update help texts
     'args': [
         {
             'arg': 'action',
             'metavar': 'ACTION',
             'type': str,
-            'choices': conf['cliparserActions'],
-            'help': f'Execute an action. Choose from: {", ".join(conf["cliparserActions"])}',
+            'choices': conf['actionArgs'],
+            'help': f'Execute an action. Choose from: {", ".join(conf["actionArgs"])}',
         },
         # global options
         {
             'arg': '--datadir',
             'metavar': 'PATH',
-            'type': str,
+            'type': cliparserArgTypeExistingDirectoryPath,
             'required': False,
             'default': None,
             'help': f'Override default data directory path.',
@@ -65,7 +72,7 @@ conf['cliparser'] = {
         {
             'arg': '--from',
             'metavar': 'UNIXTIME',
-            'type': int,
+            'type': cliparserArgTypeFrom,
             'required': False,
             'default': None,
             'help': '[update] Only fetch plays after this time.',
@@ -73,22 +80,16 @@ conf['cliparser'] = {
         {
             'arg': '--to',
             'metavar': 'UNIXTIME',
-            'type': int,
+            'type': cliparserArgTypeTo,
             'required': False,
             'default': None,
             'help': '[update] Only fetch plays before this time.',
-        },
-        {
-            'arg': ['-v', '--verbose'],
-            'action': 'store_true',
-            'required': False,
-            'help': f'[update] Show fetched tracks while updating.',
         },
         # stats options
         {
             'arg': '--limittopartists',
             'metavar': 'NUMBER',
-            'type': int,
+            'type': cliparserArgTypeQueryLimit,
             'required': False,
             'default': None,
             'help': '[stats] Limit the number of items in top artists.',
@@ -96,7 +97,7 @@ conf['cliparser'] = {
         {
             'arg': '--limittoptracks',
             'metavar': 'NUMBER',
-            'type': int,
+            'type': cliparserArgTypeQueryLimit,
             'required': False,
             'default': None,
             'help': '[stats] Limit the number of items in top tracks.',
@@ -104,7 +105,7 @@ conf['cliparser'] = {
         {
             'arg': '--limittopalbums',
             'metavar': 'NUMBER',
-            'type': int,
+            'type': cliparserArgTypeQueryLimit,
             'required': False,
             'default': None,
             'help': '[stats] Limit the number of items in top albums.',
@@ -112,7 +113,7 @@ conf['cliparser'] = {
         {
             'arg': '--limitplaysbyyear',
             'metavar': 'NUMBER',
-            'type': int,
+            'type': cliparserArgTypeQueryLimit,
             'required': False,
             'default': None,
             'help': '[stats] Limit the number of items in plays by year.',
@@ -120,7 +121,7 @@ conf['cliparser'] = {
         {
             'arg': '--limitplaysbymonth',
             'metavar': 'NUMBER',
-            'type': int,
+            'type': cliparserArgTypeQueryLimit,
             'required': False,
             'default': None,
             'help': '[stats] Limit the number of items in plays by month.',
@@ -128,7 +129,7 @@ conf['cliparser'] = {
         {
             'arg': '--limitplaysbyday',
             'metavar': 'NUMBER',
-            'type': int,
+            'type': cliparserArgTypeQueryLimit,
             'required': False,
             'default': None,
             'help': '[stats] Limit the number of items in plays by day.',
@@ -136,7 +137,7 @@ conf['cliparser'] = {
         {
             'arg': '--limitplaysbyhour',
             'metavar': 'NUMBER',
-            'type': int,
+            'type': cliparserArgTypeQueryLimit,
             'required': False,
             'default': None,
             'help': '[stats] Limit the number of items in plays by hour.',

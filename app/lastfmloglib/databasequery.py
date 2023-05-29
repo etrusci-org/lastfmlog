@@ -20,13 +20,13 @@ VALUES (
 
 # Reset all tables (transaction)
 databaseQuery['resetDatabase'] = '''
-BEGIN;
+BEGIN TRANSACTION;
 DELETE FROM trackslog;
 COMMIT;
 '''
 
 # Total plays
-databaseQuery['totalPlays'] = '''
+databaseQuery['playsTotal'] = '''
 SELECT COUNT(playHash)
 FROM trackslog;
 '''
