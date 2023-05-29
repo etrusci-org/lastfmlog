@@ -651,9 +651,9 @@ class App:
     @staticmethod
     def _getPlayHash(track: dict) -> str:
         raw = str(
-            track['date']['uts'] \
-            + track['artist']['name'] \
-            + track['name'] \
+            track['date']['uts']
+            + track['artist']['name']
+            + track['name']
             + track['album']['#text']
         ).lower()
 
