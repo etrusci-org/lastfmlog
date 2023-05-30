@@ -30,21 +30,7 @@ def main() -> None:
     App = lastfmloglib.App(conf=lastfmloglib.conf, args=cliargs, Log=Log)
 
     # Run actions
-    startTime = time.time()
-
-    if not cliargs['json']:
-        msg = f'/ L a s t f m L o g  {cliargs["action"]}'
-        Log.msg(msg)
-        Log.msg(''.rjust(len(msg), '-'))
-        Log.msg()
-
-    App.executeAction(action=cliargs['action'])
-
-    if not cliargs['json']:
-        msg = f'\ {round(time.time() - startTime, 4)}s'
-        Log.msg()
-        Log.msg(''.ljust(len(msg), '-'))
-        Log.msg(msg)
+    App.runAction(action=cliargs['action'])
 
 
 

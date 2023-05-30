@@ -50,7 +50,7 @@ conf['cliparser'] = {
             'metavar': 'ACTION',
             'type': str,
             'choices': conf['actionArgs'],
-            'help': f'Execute an action. Choose from: {", ".join(conf["actionArgs"])}',
+            'help': f'Run an action. Choose from: {", ".join(conf["actionArgs"])}',
         },
         # global options
         {
