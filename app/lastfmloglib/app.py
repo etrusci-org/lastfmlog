@@ -55,7 +55,7 @@ class App:
 
         # Check data dir path and stop if it does not exist
         if not os.path.isdir(self.dataDir):
-            raise FileNotFoundError(f'data directory not found: {self.dataDir}')
+            raise FileNotFoundError(f'Data directory not found: {self.dataDir}')
 
         # Check secrets file path and create the file if it does not exist yet
         if not os.path.isfile(self.secretsFile):
@@ -72,15 +72,15 @@ class App:
                 secrets = base64.b64decode(secrets)
                 self.secrets = json.loads(secrets)
         except Exception as e:
-            raise Exception(f'error while loading secrets file: {e}')
+            raise Exception(f'Error while loading secrets file: {e}')
 
 
     def runAction(self, action: str) -> None:
         if action not in self.conf['actionArgs']:
-            raise ValueError(f'Invalid action')
+            raise ValueError(f'Invalid action: {action}')
 
-        if action == 'whoami':
-            self.printWhoami()
+        if action == 'testsecrets':
+            self.testSecrets()
 
         if action == 'update':
             self.updateDatabase()
@@ -103,17 +103,13 @@ class App:
         if action == 'export':
             self.exportDatabase()
 
-    # ---------------------------------------------------------------------------------------------
 
-    def printWhoami(self) -> None:
-        whoami = self._getWhoami()
+    def testSecrets(self) -> None:
+        info = self._getUserInfo()
 
-        self.Log.msg(f'      username: {whoami["user"]["name"]}')
-        self.Log.msg(f' registered on: {datetime.datetime.utcfromtimestamp(int(whoami["user"]["registered"]["unixtime"]))} UTC')
-        self.Log.msg(f'         plays: {whoami["user"]["playcount"]}')
-        self.Log.msg(f'       artists: {whoami["user"]["artist_count"]}')
-        self.Log.msg(f'        tracks: {whoami["user"]["track_count"]}')
-        self.Log.msg(f'        albums: {whoami["user"]["album_count"]}')
+        self.Log.msg(f'      username: {info["user"]["name"]}')
+        self.Log.msg(f'  profile link: https://www.last.fm/user/{info["user"]["name"]}')
+        self.Log.msg(f' registered on: {datetime.datetime.utcfromtimestamp(int(info["user"]["registered"]["unixtime"]))} UTC')
         self.Log.msg(f'data directory: {self.dataDir}')
 
 
@@ -153,21 +149,13 @@ class App:
     def printNowPlayingTrack(self) -> None:
         np = self._getNowPlayingTrack()
 
-        if not self.args['json']:
-            if not np['artist']:
-                self.Log.msg('Silence')
-            else:
-                self.Log.msg(f'artist: {np["artist"]}')
-                self.Log.msg(f' track: {np["track"]}')
-                if np['album']:
-                    self.Log.msg(f' album: {np["album"]}')
+        if not np['artist']:
+            self.Log.msg('Silence')
         else:
-            if not np['artist']:
-                np = {'silence': True}
-
-            np = json.dumps(np, ensure_ascii=False, indent=4)
-
-            self.Log.msg(np)
+            self.Log.msg(f'artist: {np["artist"]}')
+            self.Log.msg(f' track: {np["track"]}')
+            if np['album']:
+                self.Log.msg(f' album: {np["album"]}')
 
 
     def trimDatabase(self) -> None:
@@ -240,7 +228,7 @@ class App:
         self.Log.msg(f'wrote {os.path.getsize(outputFile)} bytes to {self.conf["exportFilename"]}')
 
 
-    def _getWhoami(self) -> dict:
+    def _getUserInfo(self) -> dict:
         apiURL = self.conf['apiBaseURL']
         apiURL += '?method=user.getinfo'
         apiURL += '&format=json'
@@ -429,7 +417,7 @@ class App:
 
         # Top artists
         cur.execute(databaseQuery['topArtists'], {
-            'limit': self.args['limittopartists'] if self.args['limittopartists'] else stats['uniqueArtists'],
+            'limit': self.args['limitall'] if self.args['limitall'] else self.args['limittopartists'] if self.args['limittopartists'] else stats['uniqueArtists'],
         })
         for row in cur:
             stats['topArtists'].append({
@@ -439,7 +427,7 @@ class App:
 
         # Top tracks
         cur.execute(databaseQuery['topTracks'], {
-            'limit': self.args['limittoptracks'] if self.args['limittoptracks'] else stats['uniqueTracks'],
+            'limit': self.args['limitall'] if self.args['limitall'] else self.args['limittoptracks'] if self.args['limittoptracks'] else stats['uniqueTracks'],
         })
         for row in cur:
             stats['topTracks'].append({
@@ -450,7 +438,7 @@ class App:
 
         # Top albums
         cur.execute(databaseQuery['topAlbums'], {
-            'limit': self.args['limittopalbums'] if self.args['limittopalbums'] else stats['uniqueAlbums'],
+            'limit': self.args['limitall'] if self.args['limitall'] else self.args['limittopalbums'] if self.args['limittopalbums'] else stats['uniqueAlbums'],
         })
         for row in cur:
             stats['topAlbums'].append({
@@ -461,7 +449,7 @@ class App:
 
         # Plays by year
         cur.execute(databaseQuery['playsByYear'], {
-            'limit': self.args['limitplaysbyyear'] if self.args['limitplaysbyyear'] else stats['playsTotal'],
+            'limit': self.args['limitall'] if self.args['limitall'] else self.args['limitplaysbyyear'] if self.args['limitplaysbyyear'] else stats['playsTotal'],
         })
         for row in cur:
             stats['playsByYear'].append({
@@ -471,7 +459,7 @@ class App:
 
         # Plays by month
         cur.execute(databaseQuery['playsByMonth'], {
-            'limit': self.args['limitplaysbymonth'] if self.args['limitplaysbymonth'] else stats['playsTotal'],
+            'limit': self.args['limitall'] if self.args['limitall'] else self.args['limitplaysbymonth'] if self.args['limitplaysbymonth'] else stats['playsTotal'],
         })
         for row in cur:
             month = self._convertDatetimeStringToLocalTimezone(f'{row[0]}-01 00:00:00')[0:7]
@@ -482,7 +470,7 @@ class App:
 
         # Plays by day
         cur.execute(databaseQuery['playsByDay'], {
-            'limit': self.args['limitplaysbyday'] if self.args['limitplaysbyday'] else stats['playsTotal'],
+            'limit': self.args['limitall'] if self.args['limitall'] else self.args['limitplaysbyday'] if self.args['limitplaysbyday'] else stats['playsTotal'],
         })
         for row in cur:
             day = self._convertDatetimeStringToLocalTimezone(f'{row[0]} 00:00:00')[0:10]
@@ -493,7 +481,7 @@ class App:
 
         # Plays by hour
         cur.execute(databaseQuery['playsByHour'], {
-            'limit': self.args['limitplaysbyhour'] if self.args['limitplaysbyhour'] else stats['playsTotal'],
+            'limit': self.args['limitall'] if self.args['limitall'] else self.args['limitplaysbyhour'] if self.args['limitplaysbyhour'] else stats['playsTotal'],
         })
         for row in cur:
             hour = self._convertDatetimeStringToLocalTimezone(f'{row[0]}:00:00')

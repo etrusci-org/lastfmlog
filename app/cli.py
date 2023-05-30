@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 import sys
-import time
 
 import lastfmloglib
 
@@ -41,6 +40,6 @@ if __name__ == '__main__':
     except KeyboardInterrupt:
         Log.msg('\nprogram interrupted by user')
     except Exception as e:
-        Log.msg(f'[BOO] {e}', end='\n\n')
-        Log.msg('complete error log:')
+        Log.msg(f'[BOO] {e}\n')
+        Log.msg('complete error log:\n')
         raise
