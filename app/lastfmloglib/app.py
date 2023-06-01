@@ -126,8 +126,14 @@ class App:
         if self.args['from'] == None:
             self.args['from'] = lastPlayTime if self.args['to'] == None else 0
 
+        # FIXME: although the api result contains the correct dataset, --from is not working correctly.
+        #        it just doesnt downloads tracks in between for some reason.
+
         if self.args['to'] == None or self.args['from'] >= self.args['to']:
             self.args['to'] = ''
+
+        # FIXME: although the api result contains the correct dataset, --to is not working correctly.
+        #        it just doesnt downloads tracks in between for some reason.
 
         # Save tracks to database
         self._saveRecentTracks()
@@ -305,10 +311,11 @@ class App:
             self.Log.msg(f'{totalPages - page} more {"pages" if totalPages - page > 1 else "page"}')
             time.sleep(self.conf['apiRequestPagingDelay'])
             self._saveRecentTracks(page=page + 1, _savedTracks=_savedTracks)
-        else:
-            self.Log.msg(f'saved {_savedTracks} {"tracks" if _savedTracks == 0 or _savedTracks > 1 else "track"}')
-            if _savedTracks > 0:
-                self.Database.vacuum()
+            return
+
+        self.Log.msg(f'saved {_savedTracks} {"tracks" if _savedTracks == 0 or _savedTracks > 1 else "track"}')
+        if _savedTracks > 0:
+            self.Database.vacuum()
 
 
     def _getStats(self) -> dict:
@@ -634,6 +641,7 @@ class App:
             raise Exception(f'Error while fetching API data: {e}')
 
 
+    # FIXME: stop doing this
     def _convertDatetimeStringToLocalTimezone(self, datetime: str) -> str:
         unixTimestamp = time.mktime(time.strptime(datetime, '%Y-%m-%d %H:%M:%S'))
         localTimestamp = unixTimestamp + self.localTimezoneOffset
