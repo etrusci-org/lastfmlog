@@ -124,16 +124,10 @@ class App:
 
         # Set the "from" and "to" parameters for the API URL if it's not set by the user
         if self.args['from'] == None:
-            self.args['from'] = lastPlayTime if self.args['to'] == None else 0
-
-        # FIXME: although the api result contains the correct dataset, --from is not working correctly.
-        #        it just doesnt downloads tracks in between for some reason.
+            self.args['from'] = lastPlayTime
 
         if self.args['to'] == None or self.args['from'] >= self.args['to']:
             self.args['to'] = ''
-
-        # FIXME: although the api result contains the correct dataset, --to is not working correctly.
-        #        it just doesnt downloads tracks in between for some reason.
 
         # Save tracks to database
         self._saveRecentTracks()
@@ -289,19 +283,26 @@ class App:
                 if not track.get('date'):
                     continue
 
-                cur.execute(databaseQuery['trackslogInsertNewTrack'], {
-                    'playHash': self._getPlayHash(track),
-                    'playTime': track['date']['uts'],
-                    'artist': track['artist']['name'],
-                    'track': track['name'],
-                    'album': track['album']['#text'] if track['album']['#text'] else None,
-                })
+                playHash = self._getPlayHash(track)
 
-                _savedTracks += 1
+                cur.execute('SELECT playHash FROM trackslog WHERE playHash = :playHash;', {
+                    'playHash': playHash}
+                )
+                skip = cur.fetchone()
+
+                if not skip:
+                    cur.execute(databaseQuery['trackslogInsertNewTrack'], {
+                        'playHash': playHash,
+                        'playTime': track['date']['uts'],
+                        'artist': track['artist']['name'],
+                        'track': track['name'],
+                        'album': track['album']['#text'] if track['album']['#text'] else None,
+                    })
+
+                    _savedTracks += 1
 
         except Exception as e:
-            if str(e).lower().find('unique') == -1:
-                self.Log.msg(f'! {track["artist"]["name"]} - {track["name"]} | {e}')
+            self.Log.msg(f'! {track["artist"]["name"]} - {track["name"]} | {e}')
 
         finally:
             con.commit()
