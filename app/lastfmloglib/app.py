@@ -244,6 +244,7 @@ class App:
         return self._getAPIData(apiURL)
 
 
+    # FIXME: CF: Complex Method complexity = 19 <https://github.com/etrusci-org/lastfmlog/blob/25da500c69764a45c954b2d316a1375e33817721/app/lastfmloglib/app.py#L253-L323>
     def _saveRecentTracks(self, page: int = 1, _savedTracks: int = 0) -> None:
         # Bake API URL
         limitParamValue = self.conf['apiRequestLimitInitial'] if self.args['from'] == 0 or time.time() - self.args['from'] > self.conf['apiRequestSwitchToInitialLimitTreshold'] else self.conf['apiRequestLimitIncremental']
@@ -318,6 +319,7 @@ class App:
             self.Database.vacuum()
 
 
+    # FIXME: CF: Complex Method complexity = 22 <https://github.com/etrusci-org/lastfmlog/blob/b2f7125d07dcef3de24963b43ffaee7d4435dc8a/app/lastfmloglib/app.py#L314-L496>
     def _getStats(self) -> dict:
         con, cur = self.Database.connect()
 
@@ -469,10 +471,9 @@ class App:
             'limit': self.args['limitall'] if self.args['limitall'] else self.args['limitplaysbymonth'] if self.args['limitplaysbymonth'] else stats['playsTotal'],
         })
         for row in cur:
-            month = self._convertDatetimeStringToLocalTimezone(f'{row[0]}-01 00:00:00')[0:7]
             stats['playsByMonth'].append({
                 'plays': row[1],
-                'month': month,
+                'month': row[0],
             })
 
         # Plays by day
@@ -480,10 +481,9 @@ class App:
             'limit': self.args['limitall'] if self.args['limitall'] else self.args['limitplaysbyday'] if self.args['limitplaysbyday'] else stats['playsTotal'],
         })
         for row in cur:
-            day = self._convertDatetimeStringToLocalTimezone(f'{row[0]} 00:00:00')[0:10]
             stats['playsByDay'].append({
                 'plays': row[1],
-                'day': day,
+                'day': row[0],
             })
 
         # Plays by hour
@@ -491,10 +491,9 @@ class App:
             'limit': self.args['limitall'] if self.args['limitall'] else self.args['limitplaysbyhour'] if self.args['limitplaysbyhour'] else stats['playsTotal'],
         })
         for row in cur:
-            hour = self._convertDatetimeStringToLocalTimezone(f'{row[0]}:00:00')
             stats['playsByHour'].append({
                 'plays': row[1],
-                'hour': hour[0:13],
+                'hour': row[0][0:13],
             })
 
         # Don't need the database anymore
@@ -639,14 +638,6 @@ class App:
 
         except Exception as e:
             raise Exception(f'Error while fetching API data: {e}')
-
-
-    # FIXME: stop doing this
-    def _convertDatetimeStringToLocalTimezone(self, datetime: str) -> str:
-        unixTimestamp = time.mktime(time.strptime(datetime, '%Y-%m-%d %H:%M:%S'))
-        localTimestamp = unixTimestamp + self.localTimezoneOffset
-        localDatetime = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(localTimestamp))
-        return localDatetime
 
 
     @staticmethod
