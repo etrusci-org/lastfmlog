@@ -33,6 +33,14 @@ ORDER BY playTime DESC
 LIMIT 1;
 '''
 
+# First playTime
+databaseQuery['firstPlayTime'] = '''
+SELECT playTime
+FROM trackslog
+ORDER BY playTime ASC
+LIMIT 1;
+'''
+
 # Total plays
 databaseQuery['playsTotal'] = '''
 SELECT COUNT(playHash)

@@ -327,9 +327,11 @@ class App:
         # Prepare stats data dict and add some useful extra information to it
         stats = {
             '_username': self.secrets['apiUser'],
-            '_statsModifiedOn': int(time.time()),
-            '_databaseModifiedOn': int(os.path.getmtime(self.databaseFile)),
+            '_statsUpdatedOn': int(time.time()),
+            '_databaseUpdatedOn': int(os.path.getmtime(self.databaseFile)),
             '_localTimezoneOffset': self.localTimezoneOffset,
+            'firstPlayTime': None,
+            'latestPlayTime': None,
             'playsTotal': 0,
             'plays7days': 0,
             'plays14days': 0,
@@ -348,6 +350,14 @@ class App:
             'playsByDay': [],
             'playsByHour': [],
         }
+
+        # First playTime
+        cur.execute(databaseQuery['firstPlayTime'])
+        stats['firstPlayTime'] = cur.fetchone()[0]
+
+        # Latest playTime
+        cur.execute(databaseQuery['latestPlayTime'])
+        stats['latestPlayTime'] = cur.fetchone()[0]
 
         # Plays total
         cur.execute(databaseQuery['playsTotal'])
