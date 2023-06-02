@@ -11,22 +11,39 @@ from .argtypes import cliparserArgTypeExistingDirectoryPath
 conf = {}
 
 
+# Default data directory path
 conf['dataDir'] = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'data'))
+
+# Secrets filename (binary)
 conf['secretsFilename'] = 'secrets.bin'
+
+# Database filename (sqlite3)
 conf['databaseFilename'] = 'database.sqlite3'
+
+# Stats filename (json)
 conf['statsFilename'] = 'stats.json'
+
+# Database dump filename (sql)
 conf['exportFilename'] = 'export.sql'
 
-
+# API base URL with trailing slash
 conf['apiBaseURL'] = 'https://ws.audioscrobbler.com/2.0/'
+
+# Number of items per page to request when database is empty or outdated
 conf['apiRequestLimitInitial'] = 200
+
+# Number of items per page to request when database not empty and not outdated
 conf['apiRequestLimitIncremental'] = 20
-conf['apiRequestSwitchToInitialLimitTreshold'] = 86400 / 2
+
+# Time in seconds until the database is considered outdated
+conf['apiRequestSwitchToInitialLimitTreshold'] = 86400 / 2 # seconds
+
+# Time in seconds before requesting the next page if it is a paged result
 conf['apiRequestPagingDelay'] = 7
 
-
+# Actions the user can run
 conf['actionArgs'] = [
-    'whoami',
+    'testsecrets',
     'nowplaying',
     'update',
     'stats',
@@ -36,21 +53,21 @@ conf['actionArgs'] = [
     'resetsecrets',
 ]
 
-
+# Command line parser config and arguments
+# These are also the defaults
 conf['cliparser'] = {
     'info': {
         'prog': 'cli.py',
-        'description': 'For more detailed explanations, please see the README <https://github.com/etrusci-org/lastfmlog#readme>.',
-        'epilog': 'Made by arT2 <etrusci.org>',
+        'description': 'for more detailed explanations, please see the README <https://github.com/etrusci-org/lastfmlog#readme>',
+        'epilog': 'made by arT2 <etrusci.org>',
     },
-    # TODO: update help texts
     'args': [
         {
             'arg': 'action',
             'metavar': 'ACTION',
             'type': str,
             'choices': conf['actionArgs'],
-            'help': f'Execute an action. Choose from: {", ".join(conf["actionArgs"])}',
+            'help': f'run an action, choose from: {", ".join(conf["actionArgs"])}',
         },
         # global options
         {
@@ -59,14 +76,7 @@ conf['cliparser'] = {
             'type': cliparserArgTypeExistingDirectoryPath,
             'required': False,
             'default': None,
-            'help': f'Override default data directory path.',
-        },
-        # nowplaying options
-        {
-            'arg': '--json',
-            'action': 'store_true',
-            'required': False,
-            'help': f'[nowplaying] Show JSON instead of plain text output.',
+            'help': f'override default data directory path',
         },
         # update options
         {
@@ -75,7 +85,7 @@ conf['cliparser'] = {
             'type': cliparserArgTypeFrom,
             'required': False,
             'default': None,
-            'help': '[update] Only fetch plays after this time.',
+            'help': '[update] only fetch plays after this time',
         },
         {
             'arg': '--to',
@@ -83,16 +93,24 @@ conf['cliparser'] = {
             'type': cliparserArgTypeTo,
             'required': False,
             'default': None,
-            'help': '[update] Only fetch plays before this time.',
+            'help': '[update] only fetch plays before this time',
         },
         # stats options
+        {
+            'arg': '--limitall',
+            'metavar': 'NUMBER',
+            'type': cliparserArgTypeQueryLimit,
+            'required': False,
+            'default': None,
+            'help': '[stats] limit the number of items in all lists',
+        },
         {
             'arg': '--limittopartists',
             'metavar': 'NUMBER',
             'type': cliparserArgTypeQueryLimit,
             'required': False,
             'default': None,
-            'help': '[stats] Limit the number of items in top artists.',
+            'help': '[stats] limit the number of items in top artists',
         },
         {
             'arg': '--limittoptracks',
@@ -100,7 +118,7 @@ conf['cliparser'] = {
             'type': cliparserArgTypeQueryLimit,
             'required': False,
             'default': None,
-            'help': '[stats] Limit the number of items in top tracks.',
+            'help': '[stats] limit the number of items in top tracks',
         },
         {
             'arg': '--limittopalbums',
@@ -108,7 +126,7 @@ conf['cliparser'] = {
             'type': cliparserArgTypeQueryLimit,
             'required': False,
             'default': None,
-            'help': '[stats] Limit the number of items in top albums.',
+            'help': '[stats] limit the number of items in top albums',
         },
         {
             'arg': '--limitplaysbyyear',
@@ -116,7 +134,7 @@ conf['cliparser'] = {
             'type': cliparserArgTypeQueryLimit,
             'required': False,
             'default': None,
-            'help': '[stats] Limit the number of items in plays by year.',
+            'help': '[stats] limit the number of items in plays by year',
         },
         {
             'arg': '--limitplaysbymonth',
@@ -124,7 +142,7 @@ conf['cliparser'] = {
             'type': cliparserArgTypeQueryLimit,
             'required': False,
             'default': None,
-            'help': '[stats] Limit the number of items in plays by month.',
+            'help': '[stats] limit the number of items in plays by month',
         },
         {
             'arg': '--limitplaysbyday',
@@ -132,7 +150,7 @@ conf['cliparser'] = {
             'type': cliparserArgTypeQueryLimit,
             'required': False,
             'default': None,
-            'help': '[stats] Limit the number of items in plays by day.',
+            'help': '[stats] limit the number of items in plays by day',
         },
         {
             'arg': '--limitplaysbyhour',
@@ -140,7 +158,7 @@ conf['cliparser'] = {
             'type': cliparserArgTypeQueryLimit,
             'required': False,
             'default': None,
-            'help': '[stats] Limit the number of items in plays by hour.',
+            'help': '[stats] limit the number of items in plays by hour',
         },
     ]
 }

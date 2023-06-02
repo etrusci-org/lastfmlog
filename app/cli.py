@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 import sys
-import time
 
 import lastfmloglib
 
@@ -30,21 +29,7 @@ def main() -> None:
     App = lastfmloglib.App(conf=lastfmloglib.conf, args=cliargs, Log=Log)
 
     # Run actions
-    startTime = time.time()
-
-    if not cliargs['json']:
-        msg = f'/ L a s t f m L o g  {cliargs["action"]}'
-        Log.msg(msg)
-        Log.msg(''.rjust(len(msg), '-'))
-        Log.msg()
-
-    App.executeAction(action=cliargs['action'])
-
-    if not cliargs['json']:
-        msg = f'\ {round(time.time() - startTime, 4)}s'
-        Log.msg()
-        Log.msg(''.ljust(len(msg), '-'))
-        Log.msg(msg)
+    App.runAction(action=cliargs['action'])
 
 
 
@@ -55,6 +40,6 @@ if __name__ == '__main__':
     except KeyboardInterrupt:
         Log.msg('\nprogram interrupted by user')
     except Exception as e:
-        Log.msg(f'[BOO] {e}', end='\n\n')
-        Log.msg('complete error log:')
+        Log.msg(f'[BOO] {e}\n')
+        Log.msg('complete error log:\n')
         raise

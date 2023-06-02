@@ -9,24 +9,21 @@ $stats = json_decode($stats, true);
 
 
 /*** ------------------------------------------------------------------------------------
- * Use the local database
+ * Use the local database file
  * populate with action 'update'
  */
 require 'database.class.php';
 
 // Path to your database file
-$databaseFile = realpath(__DIR__.'/../app/data/database.sqlite3');
+$databaseFile = realpath('../app/data/database.sqlite3');
 
 // Query for results
 $DB = new DatabaseSQLite3(dbFile: $databaseFile);
 $DB->open();
 
-$q = 'SELECT playHash, playTime, artist, track, album FROM trackslog ORDER BY playTime DESC LIMIT 1;';
-$latestTrack = $DB->querySingle($q);
-
+$q = 'SELECT playHash, playTime, artist, track, album FROM trackslog ORDER BY playTime DESC LIMIT 10;';
+$latestTracks = $DB->query($q);
 $DB->close();
-
-
 
 // Website HTML output
 ?>
@@ -39,18 +36,19 @@ $DB->close();
     <title>LastfmLog : example/web.php</title>
 </head>
 <body>
-
     <h1>LastfmLog : example/web.php</h1>
 
-    <h2>latest track in database</h2>
-    <pre><?php print_r($latestTrack); ?></pre>
-
+    <!-- from the the local stats file -->
     <h2>total plays</h2>
     <?php print($stats['playsTotal']); ?>
 
-    <h3>all stats file data</h3>
-    <pre><?php print_r($stats); ?></pre>
-
+    <!-- from the the local database file -->
+    <h2>latest tracks in database</h2>
+    <?php
+    foreach ($latestTracks as $v) {
+        printf('[%s] %s - %s<br>', date('Y-m-d H:i T', $v['playTime']), $v['artist'], $v['track']);
+    }
+    ?>
 
 </body>
 </html>

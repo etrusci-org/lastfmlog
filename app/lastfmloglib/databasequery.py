@@ -25,6 +25,22 @@ DELETE FROM trackslog;
 COMMIT;
 '''
 
+# Latest playTime
+databaseQuery['latestPlayTime'] = '''
+SELECT playTime
+FROM trackslog
+ORDER BY playTime DESC
+LIMIT 1;
+'''
+
+# First playTime
+databaseQuery['firstPlayTime'] = '''
+SELECT playTime
+FROM trackslog
+ORDER BY playTime ASC
+LIMIT 1;
+'''
+
 # Total plays
 databaseQuery['playsTotal'] = '''
 SELECT COUNT(playHash)
@@ -110,4 +126,52 @@ FROM trackslog
 GROUP BY hour
 ORDER BY hour DESC
 LIMIT :limit;
+'''
+
+# Plays 7 days
+databaseQuery['plays7days'] = '''
+SELECT COUNT(playHash)
+FROM trackslog
+WHERE playTime >= :time
+ORDER BY playTime DESC;
+'''
+
+# Plays 14 days
+databaseQuery['plays14days'] = '''
+SELECT COUNT(playHash)
+FROM trackslog
+WHERE playTime >= :time
+ORDER BY playTime DESC;
+'''
+
+# Plays 30 days
+databaseQuery['plays30days'] = '''
+SELECT COUNT(playHash)
+FROM trackslog
+WHERE playTime >= :time
+ORDER BY playTime DESC;
+'''
+
+# Plays 90 days
+databaseQuery['plays90days'] = '''
+SELECT COUNT(playHash)
+FROM trackslog
+WHERE playTime >= :time
+ORDER BY playTime DESC;
+'''
+
+# Plays 180 days
+databaseQuery['plays180days'] = '''
+SELECT COUNT(playHash)
+FROM trackslog
+WHERE playTime >= :time
+ORDER BY playTime DESC;
+'''
+
+# Plays 365 days
+databaseQuery['plays365days'] = '''
+SELECT COUNT(playHash)
+FROM trackslog
+WHERE playTime >= :time
+ORDER BY playTime DESC;
 '''
