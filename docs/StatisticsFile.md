@@ -11,6 +11,8 @@ Where your statistics are exported to.
 
 ## Example
 
+You can find an example on how to use the generated JSON file in [example/php-stats-json.php](../example/php-stats-json.php).
+
 ```text
 cli.py stats --limitall 3
 ```

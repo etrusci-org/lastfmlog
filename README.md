@@ -1,6 +1,6 @@
 # LastfmLog
 
-Command line tool that downloads your [Last.fm](https://last.fm) scrobbles (played tracks) data into a local database so you can do something with it.
+Command line tool that downloads your [Last.fm](https://last.fm) scrobbles (played tracks) data into a local SQLite database so you can do something with it, e.g bake your own statistics. You can also export some basic statistics to a JSON file without any SQL knowledge.
 
 ---
 

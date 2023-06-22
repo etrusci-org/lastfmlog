@@ -46,7 +46,7 @@ $DB->close();
     <h2>latest tracks in database</h2>
     <?php
     foreach ($latestTracks as $v) {
-        printf('[%s] %s - %s<br>', date('Y-m-d H:i T', $v['playTime']), $v['artist'], $v['track']);
+        printf('[%s] %s - %s<br>', date('Y-m-d H:i:s', $v['playTime']), $v['artist'], $v['track']);
     }
     ?>
 
