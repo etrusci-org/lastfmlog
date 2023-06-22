@@ -11,7 +11,8 @@ On the first run, this will download all played tracks data. Subsequent runs are
 ## Supported Options
 
 - [--datadir](./Option-datadir.md)
-
+- [--from](./Option-from.md)
+- [--to](./Option-to.md)
 
 
 
