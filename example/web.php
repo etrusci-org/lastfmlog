@@ -15,7 +15,7 @@ $stats = json_decode($stats, true);
 require 'database.class.php';
 
 // Path to your database file
-$databaseFile = realpath('../app/data/database.sqlite3');
+$databaseFile = realpath(__DIR__.'/../app/data/database.sqlite3');
 
 // Query for results
 $DB = new DatabaseSQLite3(dbFile: $databaseFile);
